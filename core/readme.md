@@ -14,7 +14,6 @@
 6. [The Reasoning Engine: Logic, Math & Code](#6-the-reasoning-engine-logic-math--code)
 7. [Hands-On Exercises](#7-hands-on-exercises)
 8. [Glossary of Terms](#8-glossary-of-terms)
-9. [Next Steps & Resources](#9-next-steps--resources)
 
 ---
 
