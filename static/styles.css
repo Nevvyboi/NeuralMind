@@ -174,6 +174,86 @@ body {
 
 .learning-controls .btn { flex: 1; }
 
+/* Learning Timer */
+.learning-timer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    border: 1px solid #bae6fd;
+    transition: all 0.3s ease;
+}
+
+.learning-timer.active {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border-color: #6ee7b7;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+}
+
+.timer-icon {
+    font-size: 20px;
+    animation: none;
+}
+
+.learning-timer.active .timer-icon {
+    animation: pulse-timer 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-timer {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.timer-display {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.timer-label {
+    font-size: 10px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.timer-value {
+    font-size: 18px;
+    font-weight: 700;
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+    color: var(--text);
+    letter-spacing: 1px;
+}
+
+.learning-timer.active .timer-value {
+    color: var(--accent);
+}
+
+.timer-status {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 10px;
+    background: #e2e8f0;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.learning-timer.active .timer-status {
+    background: var(--accent);
+    color: white;
+    animation: blink-status 2s ease-in-out infinite;
+}
+
+@keyframes blink-status {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
 .progress-section { margin-bottom: 12px; }
 
 .progress-header {

@@ -16,6 +16,22 @@ from .advanced_reasoning import (
 )
 from .cognitive_architecture import CognitiveArchitecture, ThinkingMode, CognitiveState
 
+# Next-gen reasoning (Claude/GPT-4/DeepSeek/Qwen inspired)
+try:
+    from .nextgen_reasoning import (
+        NextGenReasoningEngine,
+        ReasoningStrategy,
+        ReasoningResult as NextGenReasoningResult,
+        ReasoningStep as NextGenReasoningStep,
+        QueryAnalyzer,
+        ChainOfThoughtReasoner,
+        SelfVerifier as NextGenSelfVerifier,
+        HypothesisGenerator
+    )
+    NEXTGEN_AVAILABLE = True
+except ImportError:
+    NEXTGEN_AVAILABLE = False
+
 __all__ = [
     "ReasoningEngine",
     "ReasoningType",
@@ -38,5 +54,12 @@ __all__ = [
     # Cognitive architecture
     "CognitiveArchitecture",
     "ThinkingMode",
-    "CognitiveState"
+    "CognitiveState",
+    # Next-gen reasoning
+    "NextGenReasoningEngine",
+    "ReasoningStrategy",
+    "QueryAnalyzer",
+    "ChainOfThoughtReasoner",
+    "HypothesisGenerator",
+    "NEXTGEN_AVAILABLE"
 ]

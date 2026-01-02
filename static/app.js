@@ -9,6 +9,12 @@ class NeuralMindApp {
         this.isLearning = false;
         this.isProcessing = false;
         this.pollInterval = null;
+        
+        // Learning timer
+        this.timerInterval = null;
+        this.timerStartTime = null;
+        this.timerElapsed = 0;
+        
         this.init();
     }
     
@@ -58,6 +64,90 @@ class NeuralMindApp {
         document.getElementById('learn-url-btn').onclick = () => this.learnFromUrl();
     }
     
+    // ========== LEARNING TIMER METHODS ==========
+    
+    startTimer() {
+        // Reset timer on each start
+        this.timerElapsed = 0;
+        this.timerStartTime = Date.now();
+        
+        // Update UI
+        const timerEl = document.getElementById('learning-timer');
+        const statusEl = document.getElementById('timer-status');
+        
+        timerEl.classList.add('active');
+        statusEl.textContent = 'Running';
+        
+        // Clear any existing interval
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+        }
+        
+        // Update timer every second
+        this.timerInterval = setInterval(() => this.updateTimer(), 1000);
+        
+        // Initial update
+        this.updateTimer();
+    }
+    
+    stopTimer() {
+        // Stop the interval
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+        
+        // Calculate final elapsed time
+        if (this.timerStartTime) {
+            this.timerElapsed = Date.now() - this.timerStartTime;
+        }
+        
+        // Update UI
+        const timerEl = document.getElementById('learning-timer');
+        const statusEl = document.getElementById('timer-status');
+        
+        timerEl.classList.remove('active');
+        statusEl.textContent = 'Stopped';
+    }
+    
+    updateTimer() {
+        if (!this.timerStartTime) return;
+        
+        const elapsed = Date.now() - this.timerStartTime;
+        const timerValueEl = document.getElementById('timer-value');
+        
+        timerValueEl.textContent = this.formatTime(elapsed);
+    }
+    
+    formatTime(ms) {
+        const totalSeconds = Math.floor(ms / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        
+        return [
+            hours.toString().padStart(2, '0'),
+            minutes.toString().padStart(2, '0'),
+            seconds.toString().padStart(2, '0')
+        ].join(':');
+    }
+    
+    resetTimer() {
+        this.timerElapsed = 0;
+        this.timerStartTime = null;
+        
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+        
+        document.getElementById('timer-value').textContent = '00:00:00';
+        document.getElementById('timer-status').textContent = 'Stopped';
+        document.getElementById('learning-timer').classList.remove('active');
+    }
+    
+    // ========== END TIMER METHODS ==========
+    
     async loadStatus() {
         try {
             const res = await fetch('/api/status');
@@ -103,13 +193,14 @@ class NeuralMindApp {
         }
         
         if (data.learner) {
-            // Use sites_learned from learner, but prefer memory.sources_learned for persistence
-            const learnedSources = data.memory?.sources_learned || data.learner.sites_learned || 0;
+            // FIXED: Always prefer memory.sources_learned (persistent total)
+            // Only use learner.sites_learned if memory count is unavailable
+            const totalSources = data.memory?.sources_learned || 0;
+            const sessionSources = data.learner.sites_learned || 0;
+            const displaySources = totalSources > 0 ? totalSources : sessionSources;
             
-            // Only update progress text if we have sources > 0
-            if (learnedSources > 0) {
-                document.getElementById('progress-text').textContent = `${learnedSources} sources`;
-            }
+            // Always update sources count
+            document.getElementById('progress-text').textContent = `${displaySources} sources`;
             
             // Hide progress bar (we show sources count instead)
             document.getElementById('progress-fill').style.width = '0%';
@@ -121,18 +212,26 @@ class NeuralMindApp {
                 document.getElementById('current-url').textContent = data.learner.current_title;
                 document.getElementById('current-url').href = data.learner.current_url || '#';
             }
+            
+            // FIXED: Only update animation when content TRULY changes
             if (data.learner.current_preview) {
                 const previewEl = document.getElementById('content-preview');
                 const oldText = previewEl.dataset.text || '';
-                const newStart = data.learner.current_preview.substring(0, 50);
-                const oldStart = oldText.substring(0, 50);
+                const newPreview = data.learner.current_preview;
                 
-                // Reset position if content changed
-                if (newStart !== oldStart || data.learner.current_preview.length !== oldText.length) {
+                // Check if content is genuinely new (compare first 100 chars)
+                const newStart = newPreview.substring(0, 100);
+                const oldStart = oldText.substring(0, 100);
+                const isNewContent = newStart !== oldStart;
+                
+                if (isNewContent) {
+                    // Truly new content - reset and start animation
                     previewEl.dataset.wordPos = '0';
+                    previewEl.dataset.animationComplete = 'false';
+                    previewEl.dataset.text = newPreview;
+                    this.showAnimatedReading(newPreview);
                 }
-                previewEl.dataset.text = data.learner.current_preview;
-                this.showAnimatedReading(data.learner.current_preview);
+                // If same content, don't touch the animation - let it continue/complete naturally
             }
             
             if (data.learner.is_running && !this.isLearning) {
@@ -195,6 +294,7 @@ class NeuralMindApp {
                 this.isLearning = true;
                 this.updateLearningUI(true);
                 this.startPolling();
+                this.startTimer();  // Start learning timer
                 this.toast('Learning started!', 'success');
             } else if (data.status === 'complete') {
                 this.toast(data.message, 'info');
@@ -211,6 +311,7 @@ class NeuralMindApp {
             this.updateLearningUI(false);
             this.stopPolling();
             this.stopWordAnimation();
+            this.stopTimer();  // Stop learning timer
             this.toast('Learning stopped', 'info');
             this.loadKnowledgeStats();
             this.loadStatus();  // Refresh stats from server
@@ -369,9 +470,14 @@ class NeuralMindApp {
         
         previewEl.innerHTML = prefix + highlighted + suffix;
         
-        // Advance position for next call (but don't exceed total words)
+        // Advance position for next call
+        // FIXED: Only advance if not at end, mark as complete when done
         if (currentPos < allWords.length - 1) {
             currentPos++;
+            previewEl.dataset.animationComplete = 'false';
+        } else {
+            // Mark animation as complete to prevent vibration
+            previewEl.dataset.animationComplete = 'true';
         }
         previewEl.dataset.wordPos = currentPos;
     }
@@ -382,7 +488,10 @@ class NeuralMindApp {
         this.wordAnimationInterval = setInterval(() => {
             const previewEl = document.getElementById('content-preview');
             if (previewEl && this.isLearning && previewEl.dataset.text) {
-                this.showAnimatedReading(previewEl.dataset.text);
+                // FIXED: Don't animate if already at end (prevents vibration)
+                if (previewEl.dataset.animationComplete !== 'true') {
+                    this.showAnimatedReading(previewEl.dataset.text);
+                }
             }
         }, 120); // Slightly faster for smoother reading feel
     }
@@ -402,8 +511,9 @@ class NeuralMindApp {
         // Show content preview with proper animation sync
         if (data.preview) {
             const previewEl = document.getElementById('content-preview');
-            // Reset word position for new content
+            // Reset word position and animation state for new content
             previewEl.dataset.wordPos = '0';
+            previewEl.dataset.animationComplete = 'false';
             previewEl.dataset.text = data.preview;
             this.showAnimatedReading(data.preview);
         }
@@ -420,6 +530,7 @@ class NeuralMindApp {
         this.updateLearningUI(false);
         this.stopPolling();
         this.stopWordAnimation();
+        this.stopTimer();  // Stop learning timer
         this.toast(data.message || '🎉 Learning complete!', 'success');
         this.loadKnowledgeStats();
         this.loadStatus();  // Refresh stats from server

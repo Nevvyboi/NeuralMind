@@ -1,11 +1,17 @@
 """
-Response Generator v2
+Response Generator v3
 =====================
 Intelligent response generation with knowledge-first approach.
 - Check knowledge FIRST before searching
 - Actually learn when needed, then respond
-- Better reasoning with proper knowledge retrieval
+- Advanced reasoning with Chain-of-Thought, Self-Verification
 - Self-aware of what it knows and doesn't know
+
+Reasoning inspired by:
+- Claude's constitutional approach and careful reasoning
+- GPT-4's chain-of-thought and self-consistency
+- DeepSeek's step-by-step verification
+- Qwen's multi-path exploration
 """
 
 from typing import Dict, Any, Optional, List, Callable
@@ -14,6 +20,13 @@ import time
 
 from reasoning import ReasoningEngine, ReasoningType, Metacognition
 from storage import MemoryStore
+
+# Import next-gen reasoning if available
+try:
+    from reasoning.nextgen_reasoning import NextGenReasoningEngine, ReasoningStrategy
+    NEXTGEN_REASONING_AVAILABLE = True
+except ImportError:
+    NEXTGEN_REASONING_AVAILABLE = False
 
 
 class ResponseGenerator:
@@ -25,6 +38,13 @@ class ResponseGenerator:
     2. Search INTERNAL knowledge first
     3. If confident (>50%) → respond from knowledge
     4. If not confident → trigger learning, then respond
+    
+    Reasoning Pipeline:
+    - Query Analysis: Determine question type and complexity
+    - Strategy Selection: Choose CoT, ToT, or direct response
+    - Knowledge Retrieval: Find relevant facts
+    - Reasoning: Apply selected strategy with self-verification
+    - Response Generation: Synthesize coherent answer
     """
     
     # Greetings
@@ -63,6 +83,15 @@ class ResponseGenerator:
         self.reasoning = reasoning_engine
         self.metacognition = metacognition
         self.learner = learner
+        
+        # Initialize next-gen reasoning if available
+        self.nextgen_reasoning = None
+        if NEXTGEN_REASONING_AVAILABLE:
+            try:
+                self.nextgen_reasoning = NextGenReasoningEngine(memory_store)
+                print("✅ Next-gen reasoning engine initialized")
+            except Exception as e:
+                print(f"⚠️ Could not initialize next-gen reasoning: {e}")
         
         # Learning callback for UI updates
         self.on_learning_start: Optional[Callable] = None
@@ -351,7 +380,7 @@ I think step-by-step, check what I know, and learn when I don't know something. 
         }
     
     def _respond_from_knowledge(self, query: str, knowledge: Dict, learned_from: List = None) -> Dict[str, Any]:
-        """Generate response from retrieved knowledge - avoiding topic mixing"""
+        """Generate response from retrieved knowledge using advanced reasoning"""
         entries = knowledge.get('entries', [])
         
         if not entries:
@@ -363,6 +392,73 @@ I think step-by-step, check what I know, and learn when I don't know something. 
                 'thought_process': []
             }
         
+        # Try next-gen reasoning first for better responses
+        if self.nextgen_reasoning and len(entries) > 0:
+            try:
+                result = self.nextgen_reasoning.reason(query)
+                
+                if result.answer and len(result.answer) > 50:
+                    # Build sources list
+                    sources = []
+                    seen_urls = set()
+                    for entry in entries[:3]:
+                        url = entry.get('source_url', '')
+                        if url and url not in seen_urls:
+                            sources.append({
+                                'url': url,
+                                'title': entry.get('source_title', 'Source')
+                            })
+                            seen_urls.add(url)
+                    
+                    # Add learned sources
+                    if learned_from:
+                        for lc in learned_from:
+                            if lc.get('url') and lc.get('url') not in seen_urls:
+                                sources.append({
+                                    'url': lc.get('url', ''),
+                                    'title': lc.get('title', 'Learned Source')
+                                })
+                                seen_urls.add(lc.get('url'))
+                    
+                    # Build thought process from reasoning steps
+                    thought_process = []
+                    for step in result.steps[:5]:
+                        step_type = step.step_type if hasattr(step, 'step_type') else 'reasoning'
+                        thought_process.append({
+                            'step': step.content if hasattr(step, 'content') else str(step),
+                            'type': step_type,
+                            'confidence': step.confidence if hasattr(step, 'confidence') else 0.7
+                        })
+                    
+                    # Add verification status
+                    if result.verification_status:
+                        thought_process.append({
+                            'step': f"Self-verification: {result.verification_status}",
+                            'type': 'verification',
+                            'confidence': result.confidence
+                        })
+                    
+                    # Add uncertainties if any
+                    if result.uncertainties:
+                        thought_process.append({
+                            'step': f"Note: {result.uncertainties[0]}",
+                            'type': 'uncertainty',
+                            'confidence': 0.5
+                        })
+                    
+                    return {
+                        'response': result.answer,
+                        'confidence': result.confidence,
+                        'sources': sources[:3],
+                        'needs_search': False,
+                        'thought_process': thought_process,
+                        'reasoning_strategy': result.strategy_used.value if hasattr(result.strategy_used, 'value') else str(result.strategy_used)
+                    }
+            except Exception as e:
+                print(f"Next-gen reasoning error: {e}")
+                # Fall back to basic response generation
+        
+        # Fallback: Original knowledge-based response generation
         # Get query terms for relevance checking
         query_terms = set(self._tokenize(query.lower()))
         

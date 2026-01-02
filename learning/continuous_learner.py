@@ -331,13 +331,14 @@ class ContinuousLearner:
             if len(scraped.text) < 200:
                 return False
             
-            # Update current state
+            # Update current state - FULL TEXT for animation
             self.current_url = url
             self.current_title = scraped.title or topic or url
-            self.current_preview = scraped.text[:500]
+            self.current_preview = scraped.text[:2000]  # More text for full reading
             self.current_source_type = scraped.source_type
+            self._preview_hash = hash(self.current_preview[:100])
             
-            # Emit content update
+            # Emit content update ONCE at start
             if self.on_content:
                 self.on_content({
                     'url': url,
@@ -356,11 +357,9 @@ class ContinuousLearner:
                 if len(chunk.strip()) < 50:
                     continue
                 
-                # Update preview with current chunk
-                self.current_preview = chunk[:500]
-                
-                # Emit progress periodically
-                if self.on_progress and i % 2 == 0:
+                # DON'T update preview per chunk - causes duplicate reading
+                # Just emit progress without changing content
+                if self.on_progress and i % 3 == 0:
                     self.on_progress(self.get_stats())
                 
                 # Learn from chunk
@@ -436,11 +435,12 @@ class ContinuousLearner:
         if len(text) < 100:
             return {'success': False, 'reason': 'insufficient_content'}
         
-        # Now set title and preview together (synced)
+        # Now set title and preview together (synced) - FULL TEXT for animation
         self.current_title = title
-        self.current_preview = text[:500]  # More preview text
+        self.current_preview = text[:2000]  # More preview text for full reading
+        self._preview_hash = hash(self.current_preview[:100])  # Track content to avoid re-send
         
-        # Emit content update
+        # Emit content update ONCE at start
         if self.on_content:
             self.on_content({
                 'url': url,
@@ -459,11 +459,9 @@ class ContinuousLearner:
             if len(chunk.strip()) < 50:
                 continue
             
-            # Update preview to show current chunk being processed
-            self.current_preview = chunk[:500]
-            
-            # Emit progress with current chunk
-            if self.on_progress and i % 2 == 0:  # Every 2 chunks
+            # DON'T update preview per chunk - causes duplicate reading
+            # Just emit progress without changing content
+            if self.on_progress and i % 3 == 0:  # Every 3 chunks
                 self.on_progress(self.get_stats())
             
             # Learn from chunk
