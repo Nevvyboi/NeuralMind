@@ -185,35 +185,19 @@ body {
 }
 
 .progress-bar {
-    height: 6px;
+    height: 4px;
     background: var(--border);
-    border-radius: 3px;
+    border-radius: 2px;
     overflow: hidden;
     position: relative;
+    display: none;  /* Hide progress bar - we show sources count text instead */
 }
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--primary), var(--success));
-    border-radius: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    border-radius: 2px;
     transition: width 0.5s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.progress-fill::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-    animation: shimmer 1.5s infinite;
-}
-
-@keyframes shimmer {
-    100% { left: 100%; }
 }
 
 .progress-info {
@@ -234,6 +218,38 @@ body {
     color: var(--primary);
     font-weight: 500;
     border: 1px solid #e0e7ff;
+    margin-left: 4px;
+}
+
+/* Source type badge colors */
+.domain-badge.wikipedia {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    color: #0369a1;
+    border-color: #bae6fd;
+}
+
+.domain-badge.news {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+    border-color: #fcd34d;
+}
+
+.domain-badge.blog {
+    background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+    color: #7c3aed;
+    border-color: #c4b5fd;
+}
+
+.domain-badge.academic {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    color: #047857;
+    border-color: #6ee7b7;
+}
+
+.domain-badge.web, .domain-badge.general {
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    color: #475569;
+    border-color: #cbd5e1;
 }
 
 .current-learning {
@@ -255,21 +271,49 @@ body {
 }
 #current-url:hover { text-decoration: underline; }
 
-/* Animated reading words */
+/* Animated reading words - word by word neural processing */
 .reading-word {
-    transition: all 0.15s ease;
+    display: inline;
+    transition: all 0.12s ease;
+    padding: 0 1px;
 }
 
-.reading-word.highlighted {
-    color: var(--primary);
-    font-weight: 600;
-    background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%);
-    padding: 1px 3px;
-    border-radius: 3px;
+.reading-word.pending {
+    color: var(--text-muted);
+    opacity: 0.4;
+}
+
+.reading-word.read {
+    color: var(--text);
+    opacity: 0.85;
+}
+
+.reading-word.current {
+    color: white;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%);
+    padding: 2px 6px;
+    border-radius: 4px;
+    animation: wordProcessing 0.25s ease;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+@keyframes wordProcessing {
+    0% { 
+        transform: scale(0.95); 
+        opacity: 0.5;
+    }
+    50% { 
+        transform: scale(1.08); 
+    }
+    100% { 
+        transform: scale(1); 
+        opacity: 1;
+    }
 }
 
 .currently-reading {
-    padding: 12px;
+    padding: 14px;
     background: var(--bg);
     border-radius: 8px;
     margin-top: 12px;
@@ -283,15 +327,16 @@ body {
 }
 
 .content-preview {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-secondary);
-    line-height: 1.5;
-    max-height: 80px;
+    line-height: 1.6;
+    min-height: 120px;
+    max-height: 160px;
     overflow: hidden;
     margin: 0;
-    padding: 8px;
+    padding: 12px;
     background: white;
-    border-radius: 4px;
+    border-radius: 6px;
     border: 1px solid var(--border);
 }
 

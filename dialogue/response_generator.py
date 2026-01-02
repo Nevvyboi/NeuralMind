@@ -242,45 +242,104 @@ I think step-by-step, check what I know, and learn when I don't know something. 
         """
         Search internal knowledge base.
         Returns confidence and matching entries.
+        Uses multiple strategies for maximum recall.
         """
-        query_terms = set(self._tokenize(query.lower()))
+        query_lower = query.lower().strip()
+        query_terms = set(self._tokenize(query_lower))
         
-        if not query_terms:
+        # Also get individual words from query for broader matching
+        query_words = [w.rstrip('?!.,') for w in query_lower.split() if len(w.rstrip('?!.,')) > 1]
+        clean_query = query_lower.rstrip('?!.')
+        
+        # For very short queries (1-2 words), treat them as the search term directly
+        is_short_query = len(query_words) <= 2
+        
+        if not query_terms and not query_words:
             return {'confidence': 0, 'entries': [], 'best_match': ''}
         
-        # Search knowledge
-        entries = self.memory.search_knowledge(query, limit=10)
+        # Search knowledge with multiple strategies
+        all_entries = []
         
-        if not entries:
+        # Strategy 1: Direct query search
+        direct_results = self.memory.search_knowledge(query, limit=15)
+        all_entries.extend(direct_results)
+        
+        # Strategy 2: Search the clean query (without punctuation)
+        if clean_query and clean_query != query:
+            clean_results = self.memory.search_knowledge(clean_query, limit=15)
+            all_entries.extend(clean_results)
+        
+        # Strategy 3: For short queries, search each word individually
+        if is_short_query:
+            for word in query_words:
+                if len(word) > 2:
+                    word_results = self.memory.search_knowledge(word, limit=10)
+                    all_entries.extend(word_results)
+        
+        # Strategy 4: Search each significant tokenized term
+        for term in list(query_terms)[:5]:
+            if len(term) > 3:
+                term_results = self.memory.search_knowledge(term, limit=5)
+                all_entries.extend(term_results)
+        
+        if not all_entries:
             return {'confidence': 0, 'entries': [], 'best_match': ''}
         
-        # Score entries by relevance
+        # Score entries by relevance with improved matching
         scored = []
-        for entry in entries:
+        seen_content = set()
+        
+        for entry in all_entries:
             content = entry.get('content', '').lower()
+            title = entry.get('source_title', '').lower()
+            
+            # Skip duplicates
+            content_key = hash(content[:150])
+            if content_key in seen_content:
+                continue
+            seen_content.add(content_key)
+            
+            score = 0.0
+            
+            # Score 1: Direct query appearance in content or title (most important)
+            if clean_query in content:
+                score += 0.4
+            if clean_query in title:
+                score += 0.3
+            
+            # Score 2: Individual query words appear
+            for word in query_words:
+                if word in content:
+                    score += 0.15
+                if word in title:
+                    score += 0.1
+            
+            # Score 3: Tokenized term overlap
             content_terms = set(self._tokenize(content))
+            if content_terms and query_terms:
+                overlap = len(query_terms & content_terms) / max(len(query_terms), 1)
+                score += overlap * 0.2
             
-            # Calculate term overlap
-            if content_terms:
-                overlap = len(query_terms & content_terms) / len(query_terms)
-            else:
-                overlap = 0
-            
-            # Factor in stored confidence
+            # Score 4: Stored confidence factor
             stored_conf = entry.get('confidence', 0.5)
-            score = (overlap * 0.6) + (stored_conf * 0.4)
+            score = score * 0.85 + stored_conf * 0.15
             
-            if score > 0.1:
-                scored.append({**entry, 'relevance': score})
+            # For short queries, be more generous with matching
+            if is_short_query and score > 0:
+                score = min(1.0, score * 1.3)
+            
+            if score > 0.05:
+                scored.append({**entry, 'relevance': min(1.0, score)})
         
         # Sort by relevance
         scored.sort(key=lambda x: x['relevance'], reverse=True)
         
         # Calculate overall confidence
         if scored:
-            # Use top match score, boosted slightly
-            confidence = min(1.0, scored[0]['relevance'] * 1.3)
-            best_match = scored[0].get('content', '')[:300]
+            top_score = scored[0]['relevance']
+            # Boost confidence for good matches
+            confidence = min(1.0, top_score * 1.4)
+            best_match = scored[0].get('content', '')[:500]
         else:
             confidence = 0
             best_match = ''
@@ -292,7 +351,7 @@ I think step-by-step, check what I know, and learn when I don't know something. 
         }
     
     def _respond_from_knowledge(self, query: str, knowledge: Dict, learned_from: List = None) -> Dict[str, Any]:
-        """Generate response from retrieved knowledge"""
+        """Generate response from retrieved knowledge - avoiding topic mixing"""
         entries = knowledge.get('entries', [])
         
         if not entries:
@@ -304,12 +363,58 @@ I think step-by-step, check what I know, and learn when I don't know something. 
                 'thought_process': []
             }
         
-        # Build response from top entries
+        # Get query terms for relevance checking
+        query_terms = set(self._tokenize(query.lower()))
+        
+        # Filter entries by strict relevance - must have significant overlap
+        relevant_entries = []
+        for entry in entries:
+            content = entry.get('content', '').lower()
+            title = entry.get('source_title', '').lower()
+            relevance = entry.get('relevance', 0)
+            
+            # Count how many query terms appear in content
+            content_terms = set(self._tokenize(content))
+            term_overlap = len(query_terms & content_terms)
+            
+            # Check if query terms appear in title (strong signal)
+            title_match = any(term in title for term in query_terms)
+            
+            # Only include if relevance is high OR has direct query term matches
+            if relevance >= 0.5 or term_overlap >= 2 or title_match:
+                relevant_entries.append({
+                    **entry,
+                    'term_overlap': term_overlap,
+                    'title_match': title_match
+                })
+        
+        if not relevant_entries:
+            # Fall back to best entry only
+            relevant_entries = [entries[0]]
+        
+        # Sort by relevance + term overlap
+        relevant_entries.sort(key=lambda x: (x.get('relevance', 0) + x.get('term_overlap', 0) * 0.1), reverse=True)
+        
+        # IMPORTANT: Use ONLY the best matching entry to avoid mixing topics
+        # Only add additional entries if they're from the SAME source/topic
+        best_entry = relevant_entries[0]
+        best_source = best_entry.get('source_title', '').lower()
+        
+        # Only use entries from the same or highly similar sources
+        coherent_entries = [best_entry]
+        if len(relevant_entries) > 1:
+            for entry in relevant_entries[1:3]:
+                entry_source = entry.get('source_title', '').lower()
+                # Check if sources are related (same title or high overlap)
+                if self._sources_related(best_source, entry_source):
+                    coherent_entries.append(entry)
+        
+        # Build response from coherent entries only
         response_parts = []
         sources = []
         seen = set()
         
-        for entry in entries[:3]:
+        for entry in coherent_entries[:2]:  # Max 2 coherent entries
             content = entry.get('content', '')
             source_url = entry.get('source_url', '')
             source_title = entry.get('source_title', '')
@@ -320,7 +425,7 @@ I think step-by-step, check what I know, and learn when I don't know something. 
                 continue
             seen.add(content_hash)
             
-            # Extract relevant sentences
+            # Extract relevant sentences - but maintain coherence
             relevant = self._extract_relevant(query, content)
             if relevant:
                 response_parts.append(relevant)
@@ -336,7 +441,7 @@ I think step-by-step, check what I know, and learn when I don't know something. 
             response = ' '.join(response_parts)
             response = self._clean_response(response)
         else:
-            response = entries[0].get('content', '')[:500]
+            response = best_entry.get('content', '')[:500]
         
         # Add learned sources if applicable
         if learned_from:
@@ -348,9 +453,9 @@ I think step-by-step, check what I know, and learn when I don't know something. 
                     })
         
         thought_process = [
-            {'step': f"Found {len(entries)} relevant knowledge entries", 'type': 'observation', 'confidence': 0.8},
-            {'step': f"Best match relevance: {entries[0].get('relevance', 0)*100:.0f}%", 'type': 'analysis', 'confidence': entries[0].get('relevance', 0.5)},
-            {'step': f"Synthesizing response from {len(response_parts)} sources", 'type': 'synthesis', 'confidence': knowledge['confidence']}
+            {'step': f"Found {len(entries)} knowledge entries, {len(coherent_entries)} highly relevant", 'type': 'observation', 'confidence': 0.8},
+            {'step': f"Best match: {best_entry.get('source_title', 'Unknown')[:40]}", 'type': 'analysis', 'confidence': best_entry.get('relevance', 0.5)},
+            {'step': f"Synthesizing coherent response", 'type': 'synthesis', 'confidence': knowledge['confidence']}
         ]
         
         return {
@@ -360,6 +465,31 @@ I think step-by-step, check what I know, and learn when I don't know something. 
             'needs_search': False,
             'thought_process': thought_process
         }
+    
+    def _sources_related(self, source1: str, source2: str) -> bool:
+        """Check if two sources are related enough to combine"""
+        if not source1 or not source2:
+            return False
+        
+        # Exact match
+        if source1 == source2:
+            return True
+        
+        # One contains the other
+        if source1 in source2 or source2 in source1:
+            return True
+        
+        # Word overlap
+        words1 = set(source1.split())
+        words2 = set(source2.split())
+        overlap = len(words1 & words2)
+        
+        # Need at least 50% word overlap
+        min_len = min(len(words1), len(words2))
+        if min_len > 0 and overlap / min_len >= 0.5:
+            return True
+        
+        return False
     
     def _extract_relevant(self, query: str, content: str, max_sentences: int = 4) -> str:
         """Extract sentences most relevant to query"""

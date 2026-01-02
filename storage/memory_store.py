@@ -172,14 +172,17 @@ class MemoryStore:
         return self.db.count('knowledge')
     
     def search_knowledge(self, query: str, limit: int = 10) -> List[Dict]:
-        """Search knowledge by content (simple LIKE search)"""
+        """Search knowledge by content (case-insensitive LIKE search)"""
+        # Make the search case-insensitive and handle punctuation
+        clean_query = query.lower().strip().rstrip('?!.,')
+        
         rows = self.db.fetch_all(
-            """SELECT id, content, summary, source_url, confidence, access_count
+            """SELECT id, content, summary, source_url, source_title, confidence, access_count
                FROM knowledge 
-               WHERE content LIKE ? OR summary LIKE ?
+               WHERE LOWER(content) LIKE ? OR LOWER(summary) LIKE ? OR LOWER(source_title) LIKE ?
                ORDER BY confidence DESC, access_count DESC
                LIMIT ?""",
-            (f"%{query}%", f"%{query}%", limit)
+            (f"%{clean_query}%", f"%{clean_query}%", f"%{clean_query}%", limit)
         )
         return [dict(row) for row in rows]
     

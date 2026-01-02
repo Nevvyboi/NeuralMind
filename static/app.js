@@ -62,7 +62,7 @@ class NeuralMindApp {
         try {
             const res = await fetch('/api/status');
             const data = await res.json();
-            this.updateStats(data);
+            this.updateStats(data, false); // Don't reset on initial load
         } catch (e) {
             console.error('Failed to load status:', e);
         }
@@ -78,14 +78,23 @@ class NeuralMindApp {
         }
     }
     
-    updateStats(data) {
+    updateStats(data, allowReset = true) {
+        // Get current values to prevent unwanted resets
+        const currentSources = parseInt(document.getElementById('sources-count').textContent.replace(/[^\d]/g, '')) || 0;
+        
         if (data.memory) {
             document.getElementById('vocab-count').textContent = this.formatNum(data.memory.vocabulary_size || 0);
             document.getElementById('vocab-stat').textContent = this.formatNum(data.memory.vocabulary_size || 0);
             document.getElementById('knowledge-count').textContent = this.formatNum(data.memory.knowledge_count || 0);
             document.getElementById('knowledge-stat').textContent = this.formatNum(data.memory.knowledge_count || 0);
-            document.getElementById('sources-count').textContent = this.formatNum(data.memory.sources_learned || 0);
-            document.getElementById('sources-stat').textContent = this.formatNum(data.memory.sources_learned || 0);
+            
+            // Only update sources if we have a valid value > 0
+            const newSources = data.memory.sources_learned || 0;
+            if (newSources > 0) {
+                document.getElementById('sources-count').textContent = this.formatNum(newSources);
+                document.getElementById('sources-stat').textContent = this.formatNum(newSources);
+                document.getElementById('progress-text').textContent = `${newSources} sources`;
+            }
         }
         
         if (data.model) {
@@ -94,9 +103,17 @@ class NeuralMindApp {
         }
         
         if (data.learner) {
-            const progress = data.learner.progress || 0;
-            document.getElementById('progress-fill').style.width = `${progress}%`;
-            document.getElementById('progress-text').textContent = `${Math.round(progress)}%`;
+            // Use sites_learned from learner, but prefer memory.sources_learned for persistence
+            const learnedSources = data.memory?.sources_learned || data.learner.sites_learned || 0;
+            
+            // Only update progress text if we have sources > 0
+            if (learnedSources > 0) {
+                document.getElementById('progress-text').textContent = `${learnedSources} sources`;
+            }
+            
+            // Hide progress bar (we show sources count instead)
+            document.getElementById('progress-fill').style.width = '0%';
+            
             document.getElementById('chunks-stat').textContent = this.formatNum(data.learner.total_chunks || 0);
             
             // Update current content preview
@@ -105,7 +122,17 @@ class NeuralMindApp {
                 document.getElementById('current-url').href = data.learner.current_url || '#';
             }
             if (data.learner.current_preview) {
-                document.getElementById('content-preview').textContent = data.learner.current_preview;
+                const previewEl = document.getElementById('content-preview');
+                const oldText = previewEl.dataset.text || '';
+                const newStart = data.learner.current_preview.substring(0, 50);
+                const oldStart = oldText.substring(0, 50);
+                
+                // Reset position if content changed
+                if (newStart !== oldStart || data.learner.current_preview.length !== oldText.length) {
+                    previewEl.dataset.wordPos = '0';
+                }
+                previewEl.dataset.text = data.learner.current_preview;
+                this.showAnimatedReading(data.learner.current_preview);
             }
             
             if (data.learner.is_running && !this.isLearning) {
@@ -153,6 +180,14 @@ class NeuralMindApp {
     
     async startLearning() {
         try {
+            // Show immediate UI feedback
+            document.getElementById('current-url').textContent = 'Finding content...';
+            const readingHeader = document.querySelector('.currently-reading h4');
+            if (readingHeader) {
+                readingHeader.innerHTML = '📖 Currently Reading';
+            }
+            document.getElementById('content-preview').innerHTML = '<span class="reading-word pending">Searching for knowledge sources...</span>';
+            
             const res = await fetch('/api/learn/start', { method: 'POST' });
             const data = await res.json();
             
@@ -175,8 +210,10 @@ class NeuralMindApp {
             this.isLearning = false;
             this.updateLearningUI(false);
             this.stopPolling();
+            this.stopWordAnimation();
             this.toast('Learning stopped', 'info');
             this.loadKnowledgeStats();
+            this.loadStatus();  // Refresh stats from server
         } catch (e) {
             this.toast('Failed to stop learning', 'error');
         }
@@ -207,12 +244,16 @@ class NeuralMindApp {
     }
     
     updateLearningProgress(data) {
-        // Update the progress bar (but hide percentage text)
-        const progress = data.progress || 0;
-        document.getElementById('progress-fill').style.width = `${progress}%`;
+        // Hide progress bar completely (we use sources count instead)
+        document.getElementById('progress-fill').style.width = '0%';
         
-        // Show source count instead of percentage
-        document.getElementById('progress-text').textContent = `${data.sites_learned || 0} sources`;
+        // Show source count - only update if we have sources (prevents 0 flicker)
+        const sourcesLearned = data.sites_learned || 0;
+        if (sourcesLearned > 0) {
+            document.getElementById('progress-text').textContent = `${sourcesLearned} sources`;
+            document.getElementById('sources-count').textContent = this.formatNum(sourcesLearned);
+            document.getElementById('sources-stat').textContent = this.formatNum(sourcesLearned);
+        }
         
         // Update all stats
         if (data.model) {
@@ -222,52 +263,135 @@ class NeuralMindApp {
             document.getElementById('steps-count').textContent = this.formatNum(data.model.training_steps || 0);
         }
         
-        document.getElementById('sources-count').textContent = this.formatNum(data.sites_learned || 0);
-        document.getElementById('sources-stat').textContent = this.formatNum(data.sites_learned || 0);
         document.getElementById('chunks-stat').textContent = this.formatNum(data.total_chunks || 0);
         
-        // Update current reading with animated word display
+        // Update current reading display
         if (data.current_title) {
             const urlEl = document.getElementById('current-url');
             urlEl.textContent = data.current_title;
             urlEl.href = data.current_url || '#';
             
-            // Show source domain
+            // Show source domain and type in header
             let domain = '';
             try {
                 domain = new URL(data.current_url).hostname.replace('www.', '').replace('en.', '');
-            } catch { domain = ''; }
+            } catch { domain = 'web'; }
             
-            if (domain) {
-                document.querySelector('.currently-reading h4').innerHTML = 
-                    `📖 Reading from <span class="domain-badge">${domain}</span>`;
+            // Get source type icon
+            const sourceType = data.current_source_type || 'wikipedia';
+            const sourceIcons = {
+                'wikipedia': '📚',
+                'news': '📰',
+                'blog': '📝',
+                'academic': '🎓',
+                'web': '🌐',
+                'general': '🌐'
+            };
+            const icon = sourceIcons[sourceType] || '📖';
+            
+            const readingHeader = document.querySelector('.currently-reading h4');
+            if (readingHeader) {
+                readingHeader.innerHTML = `${icon} Reading from <span class="domain-badge ${sourceType}">${domain}</span>`;
             }
         }
         
-        // Animated text preview with word highlighting
+        // Store and animate text preview - reset position when content changes
         if (data.current_preview) {
+            const previewEl = document.getElementById('content-preview');
+            const oldText = previewEl.dataset.text || '';
+            
+            // Detect if content changed - compare first 50 chars (faster) 
+            const newStart = data.current_preview.substring(0, 50);
+            const oldStart = oldText.substring(0, 50);
+            
+            if (newStart !== oldStart) {
+                // Content changed - reset word position
+                previewEl.dataset.wordPos = '0';
+                previewEl.dataset.text = data.current_preview;
+            } else if (data.current_preview.length !== oldText.length) {
+                // Same start but different length - also reset
+                previewEl.dataset.wordPos = '0';
+                previewEl.dataset.text = data.current_preview;
+            }
+            
+            // Always update text reference
+            previewEl.dataset.text = data.current_preview;
             this.showAnimatedReading(data.current_preview);
+            this.startWordAnimation();
         }
         
-        // Update learned sources list dynamically
-        this.loadKnowledgeStats();
+        // Update learned sources list (but not too often)
+        if (!this.lastKnowledgeUpdate || Date.now() - this.lastKnowledgeUpdate > 5000) {
+            this.loadKnowledgeStats();
+            this.lastKnowledgeUpdate = Date.now();
+        }
     }
     
     showAnimatedReading(text) {
         const previewEl = document.getElementById('content-preview');
         if (!previewEl || !text) return;
         
-        // Split into words and show with animation
-        const words = text.substring(0, 300).split(/\s+/);
-        const highlighted = words.map((word, i) => {
-            // Highlight current word (simulate reading)
-            const isCurrentWord = i === Math.floor(Date.now() / 100) % words.length;
-            return isCurrentWord 
-                ? `<span class="reading-word highlighted">${this.escapeHtml(word)}</span>`
-                : `<span class="reading-word">${this.escapeHtml(word)}</span>`;
+        // Split into words
+        const allWords = text.split(/\s+/).filter(w => w.length > 0);
+        if (allWords.length === 0) return;
+        
+        // Track current position (increment each call, stored in dataset)
+        let currentPos = parseInt(previewEl.dataset.wordPos || '0');
+        
+        // If we've read all words, stay at the end (don't cycle)
+        if (currentPos >= allWords.length) {
+            currentPos = allWords.length - 1;
+        }
+        
+        // Show a window of ~40 words around the current position (more space now)
+        const windowSize = 40;
+        const startIdx = Math.max(0, currentPos - 5); // Show 5 words before current
+        const endIdx = Math.min(allWords.length, startIdx + windowSize);
+        
+        // Get the visible window of words
+        const visibleWords = allWords.slice(startIdx, endIdx);
+        const highlightIdx = currentPos - startIdx; // Position within visible window
+        
+        // Build HTML with highlighted word
+        const highlighted = visibleWords.map((word, i) => {
+            if (i === highlightIdx) {
+                return `<span class="reading-word current">${this.escapeHtml(word)}</span>`;
+            } else if (i < highlightIdx) {
+                return `<span class="reading-word read">${this.escapeHtml(word)}</span>`;
+            } else {
+                return `<span class="reading-word pending">${this.escapeHtml(word)}</span>`;
+            }
         }).join(' ');
         
-        previewEl.innerHTML = highlighted + (text.length > 300 ? '...' : '');
+        // Add ellipsis indicators
+        const prefix = startIdx > 0 ? '... ' : '';
+        const suffix = endIdx < allWords.length ? ' ...' : '';
+        
+        previewEl.innerHTML = prefix + highlighted + suffix;
+        
+        // Advance position for next call (but don't exceed total words)
+        if (currentPos < allWords.length - 1) {
+            currentPos++;
+        }
+        previewEl.dataset.wordPos = currentPos;
+    }
+    
+    // Start word animation when learning
+    startWordAnimation() {
+        if (this.wordAnimationInterval) return;
+        this.wordAnimationInterval = setInterval(() => {
+            const previewEl = document.getElementById('content-preview');
+            if (previewEl && this.isLearning && previewEl.dataset.text) {
+                this.showAnimatedReading(previewEl.dataset.text);
+            }
+        }, 120); // Slightly faster for smoother reading feel
+    }
+    
+    stopWordAnimation() {
+        if (this.wordAnimationInterval) {
+            clearInterval(this.wordAnimationInterval);
+            this.wordAnimationInterval = null;
+        }
     }
     
     updateCurrentContent(data) {
@@ -275,9 +399,13 @@ class NeuralMindApp {
         urlEl.textContent = data.title || data.url;
         urlEl.href = data.url;
         
-        // Show content preview
+        // Show content preview with proper animation sync
         if (data.preview) {
-            document.getElementById('content-preview').textContent = data.preview;
+            const previewEl = document.getElementById('content-preview');
+            // Reset word position for new content
+            previewEl.dataset.wordPos = '0';
+            previewEl.dataset.text = data.preview;
+            this.showAnimatedReading(data.preview);
         }
         
         // Show length info
@@ -291,8 +419,10 @@ class NeuralMindApp {
         this.isLearning = false;
         this.updateLearningUI(false);
         this.stopPolling();
+        this.stopWordAnimation();
         this.toast(data.message || '🎉 Learning complete!', 'success');
         this.loadKnowledgeStats();
+        this.loadStatus();  // Refresh stats from server
     }
     
     // === CHAT ===
