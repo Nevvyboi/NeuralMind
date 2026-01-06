@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GroundZero - AI Learning System</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <!-- Chart.js for Neural Network Loss Graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* Session History Styles - Using correct CSS vars */
         .stats-panel {
@@ -331,6 +333,354 @@
             font-size: 12px;
             font-weight: 700;
         }
+        
+        /* Neural Network Button */
+        .btn-neural {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 14px 16px;
+            background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+        
+        .btn-neural:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+        }
+        
+        .btn-neural .neural-icon {
+            font-size: 18px;
+        }
+        
+        .btn-neural .neural-text {
+            flex: 1;
+            text-align: left;
+        }
+        
+        .btn-neural .neural-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        
+        .btn-neural.unavailable {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        
+        .btn-neural.unavailable:hover {
+            transform: none;
+        }
+        
+        /* Neural Network Modal */
+        .neural-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        
+        .neural-modal.active {
+            display: flex;
+        }
+        
+        .neural-modal-content {
+            background: var(--bg-card);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border);
+        }
+        
+        .neural-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+            color: white;
+        }
+        
+        .neural-modal-header h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .neural-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .neural-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .neural-modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+        
+        /* Neural Stats Grid */
+        .neural-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .neural-stat-card {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+        
+        .neural-stat-card:hover {
+            border-color: #f59e0b;
+            transform: translateY(-2px);
+        }
+        
+        .neural-stat-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .neural-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ef4444;
+            margin-bottom: 4px;
+        }
+        
+        .neural-stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Neural Chart Section */
+        .neural-chart-section {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+        
+        .neural-chart-section h4 {
+            margin: 0 0 16px 0;
+            font-size: 16px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .neural-chart-container {
+            height: 250px;
+            position: relative;
+        }
+        
+        /* Neural Architecture Section */
+        .neural-architecture {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+        
+        .neural-architecture h4 {
+            margin: 0 0 16px 0;
+            font-size: 16px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .arch-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        
+        .arch-item {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border);
+        }
+        
+        .arch-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .arch-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+        
+        /* Neural Status */
+        .neural-status-section {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border);
+        }
+        
+        .neural-status-section h4 {
+            margin: 0 0 16px 0;
+            font-size: 16px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .status-row:last-child {
+            border-bottom: none;
+        }
+        
+        .status-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .status-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-badge.available {
+            background: #d1fae5;
+            color: #059669;
+        }
+        
+        .status-badge.unavailable {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .status-badge.training {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        /* Neural Not Available */
+        .neural-not-available {
+            text-align: center;
+            padding: 60px 40px;
+        }
+        
+        .neural-not-available .na-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .neural-not-available h4 {
+            margin: 0 0 12px 0;
+            font-size: 20px;
+            color: var(--text);
+        }
+        
+        .neural-not-available p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin: 0 0 20px 0;
+            line-height: 1.6;
+        }
+        
+        .neural-not-available code {
+            background: var(--bg);
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #ef4444;
+            display: inline-block;
+            border: 1px solid var(--border);
+        }
+        
+        @media (max-width: 768px) {
+            .neural-stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .arch-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .neural-modal-content {
+                width: 95%;
+                max-height: 90vh;
+            }
+        }
     </style>
 </head>
 <body>
@@ -483,8 +833,8 @@
                 <div class="message ai">
                     <div class="avatar">🧠</div>
                     <div class="content">
-                        <p>Hello! I'm <strong>NeuralMind</strong>, an AI that learns from scratch.</p>
-                        <p>I start with zero knowledge and learn by reading the web. If I don't know something, I'll <strong>automatically search and learn</strong> about it!</p>
+                        <p>Hello! I'm <strong>GroundZero</strong>, an AI that learns from scratch.</p>
+                        <p>I have a <strong>neural network</strong> that gets smarter as I learn! Check the 🧠 Neural Network button to see my brain stats.</p>
                         <p>Try asking me anything - I'll either answer from what I know, or search to find out.</p>
                         <span class="time">Just now</span>
                     </div>
@@ -504,11 +854,18 @@
 
         <!-- Right Sidebar - Tools -->
         <aside class="sidebar right-sidebar">
-            <!-- Knowledge Explorer - Prominent at top -->
+            <!-- Knowledge Explorer Button -->
             <button class="btn btn-explorer" id="knowledge-explorer-btn">
                 <span class="explorer-icon">🔬</span>
                 <span class="explorer-text">Knowledge Explorer</span>
                 <span class="explorer-badge" id="knowledge-badge">0</span>
+            </button>
+            
+            <!-- Neural Network Button -->
+            <button class="btn btn-neural" id="neural-btn">
+                <span class="neural-icon">🧠</span>
+                <span class="neural-text">Neural Network</span>
+                <span class="neural-badge" id="neural-badge">--</span>
             </button>
             
             <div class="panel">
@@ -545,6 +902,10 @@
                     <div class="session-stat-row">
                         <span>Knowledge:</span>
                         <strong id="current-knowledge">0</strong>
+                    </div>
+                    <div class="session-stat-row">
+                        <span>Neural Tokens:</span>
+                        <strong id="current-neural-tokens">0</strong>
                     </div>
                 </div>
             </div>
@@ -878,7 +1239,308 @@
         }
     </style>
 
+    <!-- Neural Network Modal -->
+    <div class="neural-modal" id="neural-modal">
+        <div class="neural-modal-content">
+            <div class="neural-modal-header">
+                <h3>🧠 Neural Network Status</h3>
+                <button class="neural-close" id="neural-close">&times;</button>
+            </div>
+            <div class="neural-modal-body" id="neural-modal-body">
+                <div class="neural-loading" style="text-align: center; padding: 60px;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">⏳</div>
+                    <p>Loading neural network stats...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="toast-container"></div>
     <script src="/static/app.js"></script>
+    
+    <!-- Neural Network Stats Script -->
+    <script>
+        // Neural Network Modal Management
+        const neuralBtn = document.getElementById('neural-btn');
+        const neuralModal = document.getElementById('neural-modal');
+        const neuralClose = document.getElementById('neural-close');
+        const neuralModalBody = document.getElementById('neural-modal-body');
+        const neuralBadge = document.getElementById('neural-badge');
+        
+        let neuralChart = null;
+        let neuralAvailable = false;
+        
+        // Open Neural Modal
+        neuralBtn.addEventListener('click', () => {
+            neuralModal.classList.add('active');
+            loadNeuralStats();
+        });
+        
+        // Close Neural Modal
+        neuralClose.addEventListener('click', () => {
+            neuralModal.classList.remove('active');
+        });
+        
+        neuralModal.addEventListener('click', (e) => {
+            if (e.target === neuralModal) {
+                neuralModal.classList.remove('active');
+            }
+        });
+        
+        // Load Neural Stats
+        async function loadNeuralStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                
+                if (data.neural && data.neural.available) {
+                    neuralAvailable = true;
+                    renderNeuralStats(data.neural);
+                    neuralBtn.classList.remove('unavailable');
+                    neuralBadge.textContent = formatNumber(data.neural.model_params || 0);
+                } else {
+                    neuralAvailable = false;
+                    renderNeuralUnavailable();
+                    neuralBtn.classList.add('unavailable');
+                    neuralBadge.textContent = 'N/A';
+                }
+            } catch (error) {
+                console.error('Error loading neural stats:', error);
+                renderNeuralUnavailable();
+            }
+        }
+        
+        // Render Neural Stats
+        function renderNeuralStats(stats) {
+            const recentLosses = stats.recent_losses || [];
+            const hasLossData = recentLosses.length > 0;
+            
+            neuralModalBody.innerHTML = `
+                <!-- Stats Grid -->
+                <div class="neural-stats-grid">
+                    <div class="neural-stat-card">
+                        <div class="neural-stat-icon">🔢</div>
+                        <div class="neural-stat-value">${formatNumber(stats.model_params || 0)}</div>
+                        <div class="neural-stat-label">Parameters</div>
+                    </div>
+                    <div class="neural-stat-card">
+                        <div class="neural-stat-icon">📚</div>
+                        <div class="neural-stat-value">${formatNumber(stats.total_tokens_trained || 0)}</div>
+                        <div class="neural-stat-label">Tokens Trained</div>
+                    </div>
+                    <div class="neural-stat-card">
+                        <div class="neural-stat-icon">📖</div>
+                        <div class="neural-stat-value">${formatNumber(stats.vocab_size || 0)}</div>
+                        <div class="neural-stat-label">Vocabulary</div>
+                    </div>
+                    <div class="neural-stat-card">
+                        <div class="neural-stat-icon">🔄</div>
+                        <div class="neural-stat-value">${formatNumber(stats.global_step || 0)}</div>
+                        <div class="neural-stat-label">Training Steps</div>
+                    </div>
+                </div>
+                
+                <!-- Loss Chart -->
+                <div class="neural-chart-section">
+                    <h4>📉 Training Loss History</h4>
+                    <div class="neural-chart-container">
+                        ${hasLossData ? '<canvas id="loss-chart"></canvas>' : '<p style="text-align: center; color: var(--text-muted); padding: 60px;">No training data yet. Start learning to see the loss curve!</p>'}
+                    </div>
+                </div>
+                
+                <!-- Architecture Info -->
+                <div class="neural-architecture">
+                    <h4>🏗️ Model Architecture</h4>
+                    <div class="arch-grid">
+                        <div class="arch-item">
+                            <span class="arch-label">Model Type</span>
+                            <span class="arch-value">GroundZero Neural</span>
+                        </div>
+                        <div class="arch-item">
+                            <span class="arch-label">Layers</span>
+                            <span class="arch-value">${stats.n_layers || '4'}</span>
+                        </div>
+                        <div class="arch-item">
+                            <span class="arch-label">Attention Heads</span>
+                            <span class="arch-value">${stats.n_heads || '4'}</span>
+                        </div>
+                        <div class="arch-item">
+                            <span class="arch-label">Embedding Dim</span>
+                            <span class="arch-value">${stats.d_model || '256'}</span>
+                        </div>
+                        <div class="arch-item">
+                            <span class="arch-label">Context Length</span>
+                            <span class="arch-value">${stats.max_seq_len || '512'}</span>
+                        </div>
+                        <div class="arch-item">
+                            <span class="arch-label">Replay Buffer</span>
+                            <span class="arch-value">${formatNumber(stats.replay_buffer_size || 0)}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Status Section -->
+                <div class="neural-status-section">
+                    <h4>⚙️ System Status</h4>
+                    <div class="status-row">
+                        <span class="status-label">Neural Network</span>
+                        <span class="status-badge available">✓ Available</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Device</span>
+                        <span class="status-value">${stats.device || 'cpu'}</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Training Status</span>
+                        <span class="status-badge ${stats.is_training ? 'training' : 'available'}">${stats.is_training ? '⟳ Training' : '● Ready'}</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Texts in Buffer</span>
+                        <span class="status-value">${stats.buffer_size || 0}</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Latest Loss</span>
+                        <span class="status-value">${recentLosses.length > 0 ? recentLosses[recentLosses.length - 1].toFixed(4) : 'N/A'}</span>
+                    </div>
+                </div>
+            `;
+            
+            // Render chart if we have data
+            if (hasLossData) {
+                renderLossChart(recentLosses);
+            }
+        }
+        
+        // Render Loss Chart
+        function renderLossChart(losses) {
+            const ctx = document.getElementById('loss-chart');
+            if (!ctx) return;
+            
+            // Destroy existing chart
+            if (neuralChart) {
+                neuralChart.destroy();
+            }
+            
+            const labels = losses.map((_, i) => `Step ${i + 1}`);
+            
+            neuralChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Training Loss',
+                        data: losses,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#ef4444',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#6b7280'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                color: '#6b7280'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Loss',
+                                color: '#6b7280'
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+        
+        // Render Neural Unavailable
+        function renderNeuralUnavailable() {
+            neuralModalBody.innerHTML = `
+                <div class="neural-not-available">
+                    <div class="na-icon">🧠</div>
+                    <h4>Neural Network Not Available</h4>
+                    <p>The neural network module is not installed or failed to initialize.<br>
+                    Install PyTorch to enable neural network capabilities:</p>
+                    <code>pip install torch</code>
+                </div>
+            `;
+        }
+        
+        // Format number helper
+        function formatNumber(num) {
+            if (num >= 1000000000) {
+                return (num / 1000000000).toFixed(1) + 'B';
+            } else if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
+        }
+        
+        // Update neural badge periodically
+        async function updateNeuralBadge() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                
+                if (data.neural && data.neural.available) {
+                    neuralBadge.textContent = formatNumber(data.neural.model_params || 0);
+                    neuralBtn.classList.remove('unavailable');
+                    
+                    // Update current session neural tokens
+                    const neuralTokensEl = document.getElementById('current-neural-tokens');
+                    if (neuralTokensEl && data.neural.total_tokens_trained) {
+                        neuralTokensEl.textContent = formatNumber(data.neural.total_tokens_trained);
+                    }
+                } else {
+                    neuralBadge.textContent = 'N/A';
+                    neuralBtn.classList.add('unavailable');
+                }
+            } catch (error) {
+                // Silently fail
+            }
+        }
+        
+        // Initial load and periodic update
+        updateNeuralBadge();
+        setInterval(updateNeuralBadge, 10000); // Update every 10 seconds
+    </script>
 </body>
 </html>

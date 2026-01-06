@@ -13,4 +13,6 @@ numpy>=1.20.0
 
 # Vector database (optional - falls back to brute force if not installed)
 # Uncomment for better performance:
-# faiss-cpu>=1.7.0
+faiss-cpu>=1.7.0
+
+torch

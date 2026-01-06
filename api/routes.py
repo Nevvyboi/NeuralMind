@@ -1,7 +1,7 @@
 """
-API Routes - FastAPI Edition
-============================
-REST API endpoints using FastAPI.
+API Routes with Neural Network Stats
+====================================
+REST API endpoints using FastAPI - includes neural network endpoints.
 """
 
 from datetime import datetime
@@ -35,6 +35,11 @@ class TeachRequest(BaseModel):
     title: str = "User taught"
 
 
+class GenerateRequest(BaseModel):
+    prompt: str
+    max_tokens: int = 100
+
+
 # ==================== STATIC FILES ====================
 
 @router.get("/")
@@ -50,7 +55,7 @@ async def index():
 
 @router.get("/api/status")
 async def status():
-    """Get system status including Knowledge Graph"""
+    """Get system status including Knowledge Graph and Neural Network"""
     from .server import get_components
     c = get_components()
     
@@ -63,6 +68,13 @@ async def status():
     # Add Knowledge Graph stats if available
     if c.get('graph_reasoner'):
         response['knowledge_graph'] = c['graph_reasoner'].get_stats()
+    
+    # Add Neural Network stats if available
+    if c.get('neural_brain'):
+        response['neural'] = c['neural_brain'].get_stats()
+        response['neural']['available'] = True
+    else:
+        response['neural'] = {'available': False}
     
     return response
 
@@ -251,6 +263,13 @@ async def teach(request: TeachRequest):
         confidence=0.8
     )
     
+    # Also teach the neural network
+    if c.get('neural_brain'):
+        try:
+            c['neural_brain'].learn(content, source=title)
+        except Exception as e:
+            print(f"Neural teach error: {e}")
+    
     # Rebuild embeddings and save
     c['kb'].initialize_embeddings()
     c['kb'].save()
@@ -267,11 +286,20 @@ async def teach(request: TeachRequest):
 
 @router.get("/api/stats")
 async def stats():
-    """Get all statistics"""
+    """Get all statistics including neural network"""
     from .server import get_components
     c = get_components()
     
-    return c['learner'].get_stats()
+    result = c['learner'].get_stats()
+    
+    # Add neural stats
+    if c.get('neural_brain'):
+        result['neural'] = c['neural_brain'].get_stats()
+        result['neural']['available'] = True
+    else:
+        result['neural'] = {'available': False}
+    
+    return result
 
 
 @router.get("/api/knowledge/recent")
@@ -282,6 +310,71 @@ async def recent_knowledge(limit: int = 10):
     
     recent = c['kb'].get_recent_knowledge(limit)
     return {'recent': recent}
+
+
+# ==================== NEURAL NETWORK ====================
+
+@router.get("/api/neural/stats")
+async def neural_stats():
+    """Get detailed neural network statistics"""
+    from .server import get_components
+    c = get_components()
+    
+    if not c.get('neural_brain'):
+        return {
+            'available': False,
+            'message': 'Neural network not available. Install PyTorch: pip install torch'
+        }
+    
+    stats = c['neural_brain'].get_stats()
+    stats['available'] = True
+    return stats
+
+
+@router.post("/api/neural/generate")
+async def neural_generate(request: GenerateRequest):
+    """Generate text using neural network"""
+    from .server import get_components
+    c = get_components()
+    
+    if not c.get('neural_brain'):
+        raise HTTPException(
+            status_code=503, 
+            detail="Neural network not available. Install PyTorch: pip install torch"
+        )
+    
+    prompt = request.prompt.strip()
+    if not prompt:
+        raise HTTPException(status_code=400, detail="No prompt provided")
+    
+    try:
+        result = c['neural_brain'].generate(prompt, max_tokens=request.max_tokens)
+        return {
+            'prompt': prompt,
+            'generated': result,
+            'stats': c['neural_brain'].get_stats()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/neural/train")
+async def neural_train():
+    """Trigger manual neural network training on buffered texts"""
+    from .server import get_components
+    c = get_components()
+    
+    if not c.get('neural_brain'):
+        raise HTTPException(
+            status_code=503, 
+            detail="Neural network not available"
+        )
+    
+    try:
+        result = c['neural_brain'].train_batch()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ==================== SESSIONS ====================

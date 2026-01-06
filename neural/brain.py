@@ -43,6 +43,7 @@ class NeuralBrain:
         # Stats
         self.texts_learned = 0
         self.tokens_generated = 0
+        self.is_training = False
         
         # Try to initialize
         self._initialize()
@@ -111,13 +112,16 @@ class NeuralBrain:
         
         # Train
         try:
+            self.is_training = True
             stats = self.trainer.train_on_texts(texts, epochs=1, verbose=True)
+            self.is_training = False
             return {
                 'status': 'trained',
                 'texts': len(texts),
                 **stats
             }
         except Exception as e:
+            self.is_training = False
             return {'status': 'error', 'error': str(e)}
     
     def generate(self, prompt: str, max_tokens: int = 100,
@@ -176,27 +180,70 @@ class NeuralBrain:
         }
     
     def get_stats(self) -> Dict[str, Any]:
-        """Get neural brain statistics"""
+        """Get neural brain statistics for the dashboard"""
         stats = {
             'available': self.is_available,
             'texts_learned': self.texts_learned,
             'tokens_generated': self.tokens_generated,
-            'buffer_size': len(self.text_buffer)
+            'buffer_size': len(self.text_buffer),
+            'is_training': self.is_training
         }
         
         if self.is_available:
             trainer_stats = self.trainer.get_stats()
+            
+            # Model architecture info
+            model_config = self.trainer.config
             stats.update({
+                # Core stats
                 'model_params': trainer_stats['model_params'],
                 'vocab_size': trainer_stats['vocab_size'],
                 'total_tokens_trained': trainer_stats['total_tokens_trained'],
                 'global_step': trainer_stats['global_step'],
                 'replay_buffer_size': trainer_stats['replay_buffer_size'],
                 'device': trainer_stats['device'],
-                'recent_losses': trainer_stats['recent_losses']
+                'recent_losses': trainer_stats['recent_losses'],
+                
+                # Architecture details for display
+                'model_size': self.model_size,
+                'n_layers': getattr(model_config, 'n_layers', self._get_model_layers()),
+                'n_heads': getattr(model_config, 'n_heads', self._get_model_heads()),
+                'd_model': getattr(model_config, 'd_model', self._get_model_dim()),
+                'max_seq_len': getattr(model_config, 'max_seq_len', 512),
+            })
+        else:
+            # Default values when not available
+            stats.update({
+                'model_params': 0,
+                'vocab_size': 0,
+                'total_tokens_trained': 0,
+                'global_step': 0,
+                'replay_buffer_size': 0,
+                'device': 'N/A',
+                'recent_losses': [],
+                'model_size': self.model_size,
+                'n_layers': 0,
+                'n_heads': 0,
+                'd_model': 0,
+                'max_seq_len': 0,
             })
         
         return stats
+    
+    def _get_model_layers(self) -> int:
+        """Get number of layers based on model size"""
+        sizes = {'tiny': 2, 'small': 4, 'medium': 6, 'large': 12, 'xl': 24}
+        return sizes.get(self.model_size, 4)
+    
+    def _get_model_heads(self) -> int:
+        """Get number of attention heads based on model size"""
+        sizes = {'tiny': 2, 'small': 4, 'medium': 8, 'large': 12, 'xl': 16}
+        return sizes.get(self.model_size, 4)
+    
+    def _get_model_dim(self) -> int:
+        """Get embedding dimension based on model size"""
+        sizes = {'tiny': 128, 'small': 256, 'medium': 512, 'large': 768, 'xl': 1024}
+        return sizes.get(self.model_size, 256)
     
     def start_background_training(self):
         """Start background training thread"""
