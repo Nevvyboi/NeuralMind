@@ -1,8 +1,7 @@
 """
-API Server - FastAPI Edition
-============================
-FastAPI server with WebSocket support and proper startup/shutdown.
-Now with Knowledge Graph reasoning!
+API Server with Neural Network
+==============================
+FastAPI server with WebSocket support, Knowledge Graph, AND Neural Network!
 """
 
 import sys
@@ -29,11 +28,19 @@ except ImportError:
     REASONER_AVAILABLE = False
     print("⚠️ Advanced Knowledge Graph not available")
 
+# Try to import Neural Network
+try:
+    from neural import NeuralBrain, NEURAL_AVAILABLE
+except ImportError:
+    NEURAL_AVAILABLE = False
+    print("⚠️ Neural Network not available (install PyTorch: pip install torch)")
+
 # Global components
 knowledge_base: Optional[KnowledgeBase] = None
 learning_engine: Optional[LearningEngine] = None
 response_generator: Optional[ResponseGenerator] = None
 graph_reasoner: Optional['AdvancedReasoner'] = None
+neural_brain: Optional['NeuralBrain'] = None
 settings: Optional[Settings] = None
 
 # WebSocket connections for real-time updates
@@ -46,7 +53,8 @@ def get_components():
         'kb': knowledge_base,
         'learner': learning_engine,
         'response_generator': response_generator,
-        'graph_reasoner': graph_reasoner
+        'graph_reasoner': graph_reasoner,
+        'neural_brain': neural_brain
     }
 
 
@@ -64,8 +72,8 @@ def print_banner():
 ║                                                               ║
 ║         🧠 GroundZero - AI Built From Scratch 🧠              ║
 ║                                                               ║
-║   Vector Search + Knowledge Graph + Common Sense Reasoning    ║
-║   Multi-hop • Analogies • Semantic Similarity • Inference     ║
+║   Vector Search + Knowledge Graph + NEURAL NETWORK            ║
+║   Transformer • Attention • Continual Learning • Generation   ║
 ║                                                               ║
 ╚═══════════════════════════════════════════════════════════════╝
 """)
@@ -86,7 +94,6 @@ async def broadcast_to_websockets(message: dict):
         except:
             disconnected.append(ws)
     
-    # Remove disconnected
     for ws in disconnected:
         if ws in active_connections:
             active_connections.remove(ws)
@@ -98,7 +105,8 @@ async def lifespan(app: FastAPI):
     Application lifespan manager.
     Handles startup initialization and shutdown cleanup.
     """
-    global knowledge_base, learning_engine, response_generator, graph_reasoner, settings
+    global knowledge_base, learning_engine, response_generator
+    global graph_reasoner, neural_brain, settings
     
     print_banner()
     print("\n📦 Initializing Components...\n")
@@ -113,7 +121,7 @@ async def lifespan(app: FastAPI):
     )
     print_step("Knowledge Base ready", done=True)
     
-    # Step 2: Initialize Advanced Knowledge Graph (with common sense, analogies, multi-hop)
+    # Step 2: Initialize Advanced Knowledge Graph
     if REASONER_AVAILABLE:
         print_step("Initializing Advanced Knowledge Graph (Common Sense + Reasoning)")
         graph_reasoner = AdvancedReasoner(settings.data_dir)
@@ -122,20 +130,40 @@ async def lifespan(app: FastAPI):
         graph_reasoner = None
         print_step("Knowledge Graph not available (optional)", done=True)
     
-    # Step 3: Initialize Response Generator (connects to Knowledge Graph)
+    # Step 3: Initialize Neural Network (THE NEW PART!)
+    if NEURAL_AVAILABLE:
+        print_step("Initializing Neural Network (Transformer + Continual Learning)")
+        try:
+            neural_brain = NeuralBrain(settings.data_dir, model_size="small")
+            print_step(f"Neural Network ready ({neural_brain.get_stats().get('model_params', 0):,} params)", done=True)
+        except Exception as e:
+            print_step(f"Neural Network failed: {e}", done=True)
+            neural_brain = None
+    else:
+        neural_brain = None
+        print_step("Neural Network not available (install: pip install torch)", done=True)
+    
+    # Step 4: Initialize Response Generator (connects to KG + Neural)
     print_step("Initializing Response Generator")
     response_generator = ResponseGenerator(knowledge_base, data_dir=settings.data_dir)
     
-    # Connect the graph reasoner to the response generator
+    # Connect the graph reasoner
     if graph_reasoner and response_generator:
         response_generator.graph_reasoner = graph_reasoner
         print_step("Response Generator connected to Knowledge Graph", done=True)
-    else:
-        print_step("Response Generator ready (vector search only)", done=True)
     
-    # Step 4: Initialize Learning Engine (connects to Knowledge Graph)
+    # Connect the neural brain
+    if neural_brain and response_generator:
+        response_generator.neural_brain = neural_brain
+        print_step("Response Generator connected to Neural Network", done=True)
+    
+    # Step 5: Initialize Learning Engine (connects to KG + Neural)
     print_step("Initializing Learning Engine")
-    learning_engine = LearningEngine(knowledge_base, graph_reasoner=graph_reasoner)
+    learning_engine = LearningEngine(
+        knowledge_base, 
+        graph_reasoner=graph_reasoner,
+        neural_brain=neural_brain
+    )
     
     # Setup WebSocket callbacks
     def on_article_start(title, url):
@@ -169,20 +197,23 @@ async def lifespan(app: FastAPI):
     
     # Print loaded statistics
     stats = knowledge_base.get_statistics()
-    print("\n" + "=" * 55)
-    print("📊 Knowledge Base Statistics (Loaded from Disk):")
-    print("=" * 55)
+    print("\n" + "=" * 60)
+    print("📊 System Statistics:")
+    print("=" * 60)
     print(f"  📚 Knowledge entries:  {stats['total_knowledge']:,}")
     print(f"  📖 Sources learned:    {stats['total_sources']:,}")
     print(f"  📝 Vocabulary size:    {stats['vocabulary_size']:,}")
     print(f"  💬 Total words:        {stats['total_words']:,}")
     print(f"  🔢 Vector dimension:   {stats['embeddings']['dimension']}")
-    print(f"  🗃️  Index type:         {stats['vectors']['index_type']}")
     print(f"  💾 Data directory:     {settings.data_dir.absolute()}")
     if graph_reasoner:
         gr_stats = graph_reasoner.get_stats()
-        print(f"  🧠 Knowledge Graph:    {gr_stats['total_facts']} facts, {gr_stats['unique_subjects']} entities")
-    print("=" * 55)
+        print(f"  🗺️  Knowledge Graph:    {gr_stats['total_facts']} facts, {gr_stats['unique_subjects']} entities")
+    if neural_brain:
+        nr_stats = neural_brain.get_stats()
+        print(f"  🧠 Neural Network:     {nr_stats.get('model_params', 0):,} params, {nr_stats.get('total_tokens_trained', 0):,} tokens trained")
+        print(f"  📖 Tokenizer:          {nr_stats.get('vocab_size', 0):,} tokens")
+    print("=" * 60)
     
     if stats['total_knowledge'] > 0:
         print(f"\n✅ Loaded {stats['total_knowledge']:,} knowledge entries from disk!")
@@ -201,6 +232,14 @@ async def lifespan(app: FastAPI):
         print("  🛑 Stopping learning engine...")
         learning_engine.stop()
     
+    # Save neural network
+    if neural_brain:
+        print("  💾 Saving neural network...")
+        try:
+            neural_brain.save()
+        except:
+            pass
+    
     # Save all data
     if knowledge_base:
         print("  💾 Saving knowledge base to disk...")
@@ -214,8 +253,8 @@ def create_app() -> FastAPI:
     """Create and configure FastAPI application"""
     app = FastAPI(
         title="GroundZero",
-        description="AI built from scratch - Vector Search + Knowledge Graph + Symbolic Reasoning",
-        version="3.1.0",
+        description="AI built from scratch - Vector Search + Knowledge Graph + Neural Network",
+        version="4.0.0",
         lifespan=lifespan
     )
     

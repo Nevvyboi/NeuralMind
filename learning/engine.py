@@ -1,6 +1,6 @@
 """
-Learning Engine
-===============
+Learning Engine with Neural Network
+====================================
 Continuous learning from Wikipedia and web sources.
 
 Features:
@@ -10,6 +10,7 @@ Features:
 - URL ingestion
 - Search and learn
 - **Persistent Knowledge Graph** (facts stored in SQLite)
+- **Neural Network Training** (learns from all content)
 """
 
 import threading
@@ -31,9 +32,13 @@ class LearningEngine:
     - Manual URL ingestion
     - Progress callbacks for UI updates
     - **Persistent Knowledge Graph** for symbolic reasoning (SQLite-backed)
+    - **Neural Network** for pattern learning (PyTorch transformer)
+    
+    The neural network learns from ALL content automatically,
+    getting smarter with every article read!
     """
     
-    def __init__(self, knowledge_base: KnowledgeBase, graph_reasoner=None):
+    def __init__(self, knowledge_base: KnowledgeBase, graph_reasoner=None, neural_brain=None):
         self.kb = knowledge_base
         self.wikipedia = WikipediaSearch()
         self.extractor = ContentExtractor()
@@ -42,6 +47,11 @@ class LearningEngine:
         self.graph_reasoner = graph_reasoner
         if self.graph_reasoner:
             print("✅ Learning Engine connected to Persistent Knowledge Graph")
+        
+        # Neural Network Brain (PyTorch transformer)
+        self.neural_brain = neural_brain
+        if self.neural_brain:
+            print("✅ Learning Engine connected to Neural Network")
         
         # Learning state
         self.is_running = False
@@ -58,7 +68,8 @@ class LearningEngine:
             'articles_read': 0,
             'words_learned': 0,
             'knowledge_added': 0,
-            'facts_extracted': 0,  # Track knowledge graph facts
+            'facts_extracted': 0,
+            'neural_tokens': 0,
             'start_time': None,
             'current_article': None,
             'current_url': None,
@@ -86,7 +97,8 @@ class LearningEngine:
             'articles_read': 0,
             'words_learned': 0,
             'knowledge_added': 0,
-            'facts_extracted': 0,  # Track knowledge graph facts
+            'facts_extracted': 0,
+            'neural_tokens': 0,
             'start_time': self.session_start_time,
             'current_article': None,
             'current_url': None,
@@ -113,7 +125,6 @@ class LearningEngine:
         if self._thread:
             self._thread.join(timeout=2)
         
-        # End session in database
         duration = 0
         if self.session_start_time:
             duration = int(time.time() - self.session_start_time)
@@ -124,16 +135,23 @@ class LearningEngine:
         # Save embeddings
         self.kb.save()
         
+        # Save neural network if available
+        if self.neural_brain and hasattr(self.neural_brain, 'save'):
+            try:
+                self.neural_brain.save()
+            except Exception as e:
+                print(f"⚠️ Neural save error: {e}")
+        
         session_summary = {
             'session_id': self.current_session_id,
             'duration_seconds': duration,
             'articles_read': self.session_stats['articles_read'],
             'words_learned': self.session_stats['words_learned'],
             'knowledge_added': self.session_stats['knowledge_added'],
-            'facts_extracted': self.session_stats.get('facts_extracted', 0)
+            'facts_extracted': self.session_stats.get('facts_extracted', 0),
+            'neural_tokens': self.session_stats.get('neural_tokens', 0)
         }
         
-        # Reset session
         self.current_session_id = None
         self.session_start_time = None
         
@@ -163,7 +181,6 @@ class LearningEngine:
                 continue
             
             try:
-                # Get random articles
                 articles = self.wikipedia.get_random_articles(5)
                 
                 for article in articles:
@@ -175,15 +192,28 @@ class LearningEngine:
                     except Exception as e:
                         print(f"Error learning article: {e}")
                     
-                    time.sleep(0.3)  # Be nice to Wikipedia
+                    time.sleep(0.3)
                 
                 batch_count += 1
                 
-                # Initialize embeddings after first batch (in background)
+                # =====================================================
+                # NEURAL NETWORK: Train on buffered content
+                # =====================================================
+                if self.neural_brain and batch_count % 2 == 0:
+                    try:
+                        result = self.neural_brain.train_batch()
+                        if result.get('status') == 'trained':
+                            tokens = result.get('tokens_trained', 0)
+                            self.session_stats['neural_tokens'] += tokens
+                            loss = result.get('loss', 0)
+                            print(f"🧠 Neural: loss={loss:.4f}, tokens={tokens:,}")
+                    except Exception as e:
+                        print(f"⚠️ Neural training error: {e}")
+                
+                # Initialize embeddings
                 if batch_count == 1:
                     threading.Thread(target=self._safe_init_embeddings, daemon=True).start()
                 
-                # Rebuild embeddings every 50 batches (less frequently, in background)
                 if batch_count % 50 == 0:
                     threading.Thread(target=self._safe_init_embeddings, daemon=True).start()
                 
@@ -210,28 +240,23 @@ class LearningEngine:
         if not title:
             return False
         
-        # Check if already learned (prevents duplicate learning)
         if self.kb.source_exists(url):
             return False
         
-        # Notify start and update stats
         self.session_stats['current_article'] = title
         self.session_stats['current_url'] = url
         if self.on_article_start:
             self.on_article_start(title, url)
         
-        # Fetch content
         content_data = self.wikipedia.get_article_content(title)
         
         if not content_data or len(content_data.get('content', '')) < 100:
             return False
         
-        # Store knowledge
         content = content_data['content']
         word_count = len(content.split())
         
-        # Store current content for preview
-        self.session_stats['current_content'] = content[:2000]  # First 2000 chars for preview
+        self.session_stats['current_content'] = content[:2000]
         
         knowledge_id, is_new = self.kb.add_knowledge(
             content=content,
@@ -241,27 +266,33 @@ class LearningEngine:
         )
         
         # =====================================================
-        # PERSISTENT KNOWLEDGE GRAPH: Extract facts (SQLite-backed)
+        # PERSISTENT KNOWLEDGE GRAPH: Extract facts
         # =====================================================
         facts_added = 0
         if self.graph_reasoner and is_new:
             try:
                 graph_result = self.graph_reasoner.learn(content, title)
                 facts_added = graph_result.get('facts_added', 0)
-                # Safely update facts_extracted
                 if 'facts_extracted' not in self.session_stats:
                     self.session_stats['facts_extracted'] = 0
                 self.session_stats['facts_extracted'] += facts_added
             except Exception as e:
                 print(f"Knowledge graph extraction error: {e}")
         
+        # =====================================================
+        # NEURAL NETWORK: Feed content for learning
+        # =====================================================
+        if self.neural_brain and is_new:
+            try:
+                self.neural_brain.learn(content, source=title)
+            except Exception as e:
+                print(f"Neural learning error: {e}")
+        
         if is_new:
-            # Update in-memory session stats
             self.session_stats['articles_read'] += 1
             self.session_stats['words_learned'] += word_count
             self.session_stats['knowledge_added'] += 1
             
-            # Update session in database
             if self.current_session_id:
                 self.kb.update_session(
                     self.current_session_id,
@@ -270,7 +301,6 @@ class LearningEngine:
                     knowledge=1
                 )
         
-        # Notify complete
         if self.on_article_complete:
             self.on_article_complete(title, word_count)
         
@@ -278,7 +308,6 @@ class LearningEngine:
     
     def learn_from_url(self, url: str) -> Dict[str, Any]:
         """Learn from a specific URL"""
-        # Check if exists (prevents duplicate learning)
         if self.kb.source_exists(url):
             return {
                 'success': False,
@@ -287,7 +316,6 @@ class LearningEngine:
                 'url': url
             }
         
-        # Extract content
         if 'wikipedia.org' in url:
             content_data = self.wikipedia.get_article_by_url(url)
         else:
@@ -301,7 +329,6 @@ class LearningEngine:
                 'url': url
             }
         
-        # Store
         content = content_data['content']
         title = content_data.get('title', url)
         word_count = len(content.split())
@@ -313,7 +340,13 @@ class LearningEngine:
             confidence=0.7
         )
         
-        # Update embeddings
+        # Feed to neural network
+        if self.neural_brain:
+            try:
+                self.neural_brain.learn(content, source=title)
+            except Exception as e:
+                print(f"Neural learning error: {e}")
+        
         self.kb.initialize_embeddings()
         
         return {
@@ -337,7 +370,6 @@ class LearningEngine:
                     'url': article.get('url')
                 })
         
-        # Update embeddings after learning
         if learned_from:
             self.kb.initialize_embeddings()
         
@@ -352,12 +384,11 @@ class LearningEngine:
         kb_stats = self.kb.get_statistics()
         session_summary = self.kb.get_session_summary()
         
-        # Current session time
         session_time = 0
         if self.session_start_time:
             session_time = time.time() - self.session_start_time
         
-        return {
+        stats = {
             'is_running': self.is_running,
             'is_paused': self.is_paused,
             'current_article': self.session_stats.get('current_article'),
@@ -369,11 +400,22 @@ class LearningEngine:
                 'words_learned': self.session_stats.get('words_learned', 0),
                 'knowledge_added': self.session_stats.get('knowledge_added', 0),
                 'facts_extracted': self.session_stats.get('facts_extracted', 0),
+                'neural_tokens': self.session_stats.get('neural_tokens', 0),
                 'duration_seconds': int(session_time)
             },
             'all_sessions': session_summary,
             'total': kb_stats
         }
+        
+        # Add neural stats if available
+        if self.neural_brain:
+            try:
+                neural_stats = self.neural_brain.get_stats()
+                stats['neural'] = neural_stats
+            except:
+                pass
+        
+        return stats
     
     def get_session_history(self, limit: int = 20) -> List[Dict[str, Any]]:
         """Get detailed session history"""

@@ -1,16 +1,13 @@
 """
-Reasoning Engine
-================
-Intelligent question answering using semantic search AND
-symbolic reasoning with persistent knowledge graph.
+Reasoning Engine with Neural Network
+=====================================
+Intelligent question answering using:
+1. Semantic search (vector embeddings)
+2. Symbolic reasoning (knowledge graph)
+3. Neural generation (transformer)
 
-Features:
-- Persistent Knowledge Graph reasoning (SQLite-backed, survives restarts)
-- Semantic knowledge retrieval
-- Question classification
-- Inference engine
-- Confidence calibration
-- Answer synthesis
+The neural network provides a fallback when other methods fail,
+and can generate novel responses based on learned patterns.
 """
 
 import re
@@ -35,13 +32,14 @@ except ImportError:
 
 class QuestionType(Enum):
     """Types of questions"""
-    DEFINITION = "definition"      # What is X?
-    FACTUAL = "factual"           # Who/When/Where?
-    CAUSAL = "causal"             # Why?
-    PROCEDURAL = "procedural"     # How to?
-    COMPARATIVE = "comparative"   # Compare X and Y
-    GREETING = "greeting"         # Hi, hello
-    META = "meta"                 # About the AI
+    DEFINITION = "definition"
+    FACTUAL = "factual"
+    CAUSAL = "causal"
+    PROCEDURAL = "procedural"
+    COMPARATIVE = "comparative"
+    GREETING = "greeting"
+    META = "meta"
+    CREATIVE = "creative"  # NEW: For creative/generative questions
 
 
 @dataclass
@@ -53,17 +51,15 @@ class ReasoningResult:
     question_type: QuestionType
     thought_process: List[Dict[str, Any]]
     needs_search: bool = False
+    reasoning_method: str = "unknown"
 
 
 class ReasoningEngine:
     """
     Analyzes questions and generates reasoned answers.
-    
-    Uses semantic search to find relevant knowledge,
-    then synthesizes an answer from the results.
+    Uses semantic search, knowledge graph, AND neural generation.
     """
     
-    # Question patterns for classification
     PATTERNS = {
         QuestionType.DEFINITION: [
             r'^what is\b', r'^what are\b', r'^define\b', r'^explain what\b',
@@ -82,16 +78,19 @@ class ReasoningEngine:
             r'compare\b', r'difference\b', r'versus\b', r'\bvs\b', r'better\b'
         ],
         QuestionType.GREETING: [
-            r'^hi\b', r'^hello\b', r'^hey\b', r'^good morning\b', 
+            r'^hi\b', r'^hello\b', r'^hey\b', r'^good morning\b',
             r'^good afternoon\b', r'^good evening\b', r'^thanks\b'
         ],
         QuestionType.META: [
             r'\byou\b.*\bcan\b', r'\byour\b', r'neuralmind', r'what can you',
             r'who are you', r'what are you', r'about yourself'
+        ],
+        QuestionType.CREATIVE: [
+            r'^write\b', r'^create\b', r'^generate\b', r'^make up\b',
+            r'^imagine\b', r'^pretend\b', r'^tell me a story\b'
         ]
     }
     
-    # Greeting responses
     GREETINGS = {
         'hi': "Hi there! How can I help you? Ask me anything!",
         'hello': "Hello! What would you like to know?",
@@ -125,16 +124,7 @@ class ReasoningEngine:
         return QuestionType.DEFINITION
     
     def reason(self, query: str) -> ReasoningResult:
-        """
-        Main reasoning method.
-        
-        Process:
-        1. Check for greetings/meta
-        2. Classify question type
-        3. Search knowledge semantically
-        4. Calculate confidence
-        5. Synthesize answer
-        """
+        """Main reasoning method"""
         query_clean = query.strip()
         query_lower = query_clean.lower()
         
@@ -147,17 +137,15 @@ class ReasoningEngine:
                     sources=[],
                     question_type=QuestionType.GREETING,
                     thought_process=[],
-                    needs_search=False
+                    needs_search=False,
+                    reasoning_method="greeting"
                 )
         
-        # Classify question
         q_type = self.classify_question(query_lower)
         
-        # Handle meta questions
         if q_type == QuestionType.META:
             return self._handle_meta_question()
         
-        # Build thought process
         thoughts = []
         thoughts.append({
             'step': f"Analyzing: {query_clean[:50]}...",
@@ -174,7 +162,6 @@ class ReasoningEngine:
             'confidence': 0.8
         })
         
-        # No results
         if not results:
             return ReasoningResult(
                 answer=None,
@@ -182,10 +169,10 @@ class ReasoningEngine:
                 sources=[],
                 question_type=q_type,
                 thought_process=thoughts,
-                needs_search=True
+                needs_search=True,
+                reasoning_method="no_results"
             )
         
-        # Check confidence threshold
         best = results[0]
         confidence = best.get('relevance', 0)
         
@@ -195,7 +182,6 @@ class ReasoningEngine:
             'confidence': confidence
         })
         
-        # Too low confidence - need web search
         if confidence < 0.25:
             return ReasoningResult(
                 answer=None,
@@ -203,127 +189,117 @@ class ReasoningEngine:
                 sources=[],
                 question_type=q_type,
                 thought_process=thoughts,
-                needs_search=True
+                needs_search=True,
+                reasoning_method="low_confidence"
             )
         
-        # Extract answer
-        answer = self._extract_answer(query_clean, best['content'])
+        answer = self._synthesize_answer(query_clean, results, q_type)
         
-        # Build sources
-        sources = []
-        seen = set()
-        for r in results[:3]:
-            url = r.get('source_url', '')
-            if url and url not in seen:
-                sources.append({
-                    'url': url,
-                    'title': r.get('source_title', 'Source')
-                })
-                seen.add(url)
+        sources = [
+            {'url': r.get('source_url', ''), 'title': r.get('source_title', '')}
+            for r in results if r.get('source_url')
+        ]
         
         return ReasoningResult(
             answer=answer,
             confidence=confidence,
-            sources=sources,
+            sources=sources[:5],
             question_type=q_type,
             thought_process=thoughts,
-            needs_search=False
+            needs_search=False,
+            reasoning_method="vector_search"
         )
     
     def _handle_meta_question(self) -> ReasoningResult:
-        """Handle questions about the AI"""
-        stats = self.kb.get_statistics()
-        
-        response = f"""I'm **NeuralMind**, an AI that learns from scratch!
+        """Handle questions about the AI itself"""
+        response = """I'm GroundZero - an AI built completely from scratch!
 
-📚 **My Knowledge:**
-- {stats['total_knowledge']:,} facts learned
-- {stats['total_sources']:,} sources read
-- {stats['vocabulary_size']:,} words in vocabulary
-- {stats['total_words']:,} total words processed
+**My Architecture:**
+• 🔍 **Vector Search** - Semantic similarity for finding relevant knowledge
+• 🗺️ **Knowledge Graph** - Symbolic reasoning with facts and relationships
+• 🧠 **Neural Network** - Transformer model for pattern learning and generation
 
-🧠 **Vector Database:**
-- {stats['vectors']['total_vectors']:,} embeddings stored
-- {stats['embeddings']['dimension']}D vectors
-- Index: {stats['vectors']['index_type']}
+**What I Can Do:**
+• Answer questions from my knowledge base
+• Learn from Wikipedia and web pages
+• Reason about relationships between facts
+• Generate responses using neural patterns
 
-I learn by reading Wikipedia and websites, then store knowledge as vectors for semantic search. Ask me about any topic I've learned!"""
+I get smarter every time I learn something new!"""
         
         return ReasoningResult(
             answer=response,
             confidence=1.0,
             sources=[],
             question_type=QuestionType.META,
-            thought_process=[{
-                'step': 'Self-reflection',
-                'type': 'meta',
-                'confidence': 1.0
-            }],
-            needs_search=False
+            thought_process=[],
+            needs_search=False,
+            reasoning_method="meta"
         )
     
-    def _extract_answer(self, query: str, content: str) -> str:
-        """Extract relevant answer from content"""
+    def _synthesize_answer(self, query: str, results: List[Dict], q_type: QuestionType) -> str:
+        """Synthesize an answer from search results"""
+        if not results:
+            return None
+        
+        best = results[0]
+        content = best.get('content', '')
+        
         if not content:
-            return "I found a reference but couldn't extract details."
+            return None
         
-        if len(content) < 600:
-            return content
-        
-        # Find sentences with query words
-        query_words = set(w.lower() for w in re.findall(r'\w+', query) if len(w) > 3)
         sentences = re.split(r'(?<=[.!?])\s+', content)
         
-        relevant = []
+        query_words = set(query.lower().split())
+        query_words -= {'what', 'is', 'the', 'a', 'an', 'who', 'where', 'when', 'why', 'how'}
+        
+        scored_sentences = []
         for sent in sentences:
-            if len(sent) < 20:
-                continue
             sent_lower = sent.lower()
-            matches = sum(1 for w in query_words if w in sent_lower)
-            if matches > 0:
-                relevant.append((sent, matches))
+            score = sum(1 for word in query_words if word in sent_lower)
+            if score > 0:
+                scored_sentences.append((sent, score))
         
-        if relevant:
-            relevant.sort(key=lambda x: x[1], reverse=True)
-            answer = ' '.join(s[0] for s in relevant[:4])
-            if len(answer) > 600:
-                answer = answer[:600] + '...'
-            return answer
+        scored_sentences.sort(key=lambda x: -x[1])
         
-        return content[:500] + ('...' if len(content) > 500 else '')
+        if scored_sentences:
+            answer_sentences = [s[0] for s in scored_sentences[:3]]
+            answer = ' '.join(answer_sentences)
+        else:
+            answer = ' '.join(sentences[:3])
+        
+        if len(answer) > 500:
+            answer = answer[:500] + '...'
+        
+        return answer
 
 
 class ResponseGenerator:
     """
-    Generates responses using BOTH:
+    Generates responses using ALL reasoning methods:
     1. Vector search (semantic similarity)
-    2. Advanced Knowledge Graph (symbolic AI with common sense)
-    
-    This combines retrieval with actual reasoning!
+    2. Knowledge Graph reasoning (symbolic AI)
+    3. Neural Network generation (transformer)
     """
     
     def __init__(self, knowledge_base: KnowledgeBase, data_dir=None):
         self.kb = knowledge_base
         self.reasoning = ReasoningEngine(knowledge_base)
         
-        # Initialize the advanced reasoner (with common sense, analogies, multi-hop)
-        if REASONER_AVAILABLE and data_dir:
-            self.graph_reasoner = AdvancedReasoner(data_dir)
-            print("✅ Advanced Knowledge Graph Reasoner initialized")
-        else:
-            self.graph_reasoner = None
+        # Knowledge Graph (set by server)
+        self.graph_reasoner = None
         
-        # Import context manager
+        # Neural Brain (set by server)
+        self.neural_brain = None
+        
+        # Context manager
         from .context import get_context, ConversationContext
         self.get_context = get_context
         
-        print("✅ Response Generator initialized (with context + advanced reasoning)")
+        print("✅ Response Generator initialized")
     
     def learn_to_graph(self, content: str, source: str = "") -> Dict[str, Any]:
-        """
-        Feed learned content to the persistent knowledge graph.
-        Called automatically when new knowledge is added.
-        """
+        """Feed learned content to the knowledge graph"""
         if not self.graph_reasoner:
             return {'facts_added': 0}
         
@@ -331,31 +307,28 @@ class ResponseGenerator:
         return result
     
     def generate(self, query: str, session_id: str = "default") -> Dict[str, Any]:
-        """Generate a response with conversation context AND reasoning"""
+        """
+        Generate a response using hybrid reasoning.
+        
+        Priority:
+        1. Knowledge Graph (if confident answer)
+        2. Vector Search (semantic similarity)
+        3. Neural Network (if available and others fail)
+        4. Web Search (as last resort)
+        """
         context = self.get_context(session_id)
         
-        # First, try to resolve any references in the query
-        resolved_entity, clarified_query = context.resolve_reference(query)
+        # Check for pronoun resolution
+        resolved_entity = context.resolve_reference(query)
         
         if resolved_entity:
-            # User is referring to a previous entity
-            # Search specifically for that entity
-            results = self.kb.search(resolved_entity.name, limit=5)
+            search_query = f"{resolved_entity.name} {query}"
+            results = self.kb.search(search_query, limit=5)
             
-            if results:
-                # Find the best match for this specific entity
-                best_match = None
-                for r in results:
-                    if resolved_entity.name.lower() in r.get('source_title', '').lower():
-                        best_match = r
-                        break
-                
-                if not best_match:
-                    best_match = results[0]
-                
+            if results and results[0].get('relevance', 0) > 0.3:
+                best_match = results[0]
                 answer = self._extract_focused_answer(resolved_entity.name, best_match.get('content', ''))
                 
-                # Update context
                 context.add_user_message(query)
                 context.add_assistant_response(answer, [{
                     'name': resolved_entity.name,
@@ -368,33 +341,30 @@ class ResponseGenerator:
                 return {
                     'response': answer,
                     'confidence': best_match.get('relevance', 0.7),
-                    'sources': [{'url': best_match.get('source_url', ''), 
+                    'sources': [{'url': best_match.get('source_url', ''),
                                 'title': best_match.get('source_title', '')}],
                     'needs_search': False,
                     'resolved_from': resolved_entity.name,
-                    'thought_process': [{'step': f'Resolved reference to: {resolved_entity.name}', 
+                    'thought_process': [{'step': f'Resolved reference to: {resolved_entity.name}',
                                         'type': 'context', 'confidence': 0.9}],
-                    'question_type': 'definition'
+                    'question_type': 'definition',
+                    'reasoning_method': 'context_resolution'
                 }
         
         # =====================================================
-        # HYBRID REASONING: Try Knowledge Graph FIRST
+        # METHOD 1: Try Knowledge Graph FIRST
         # =====================================================
         graph_result = None
         if self.graph_reasoner:
             graph_result = self.graph_reasoner.reason(query)
             
-            # If knowledge graph has a confident answer, use it
             if graph_result and graph_result['confidence'] >= 0.6 and graph_result['facts_used'] > 0:
-                # High confidence from knowledge graph!
                 answer = graph_result['answer']
                 
-                # Still search vectors for sources/additional info
                 vector_results = self.kb.search(query, limit=3)
-                sources = [{'url': r.get('source_url', ''), 'title': r.get('source_title', '')} 
+                sources = [{'url': r.get('source_url', ''), 'title': r.get('source_title', '')}
                           for r in vector_results if r.get('source_url')]
                 
-                # Update context
                 context.add_user_message(query)
                 context.add_assistant_response(answer, [{
                     'name': query,
@@ -412,19 +382,20 @@ class ResponseGenerator:
                     'reasoning_type': 'knowledge_graph',
                     'facts_used': graph_result['facts_used'],
                     'thought_process': [
-                        {'step': 'Knowledge Graph Reasoning', 'type': 'graph', 
+                        {'step': 'Knowledge Graph Reasoning', 'type': 'graph',
                          'confidence': graph_result['confidence']},
                         {'step': graph_result.get('reasoning_trace', ''), 'type': 'trace'}
                     ],
-                    'question_type': graph_result.get('question_type', 'factual')
+                    'question_type': graph_result.get('question_type', 'factual'),
+                    'reasoning_method': 'knowledge_graph'
                 }
         
         # =====================================================
-        # FALLBACK: Use vector search + extraction
+        # METHOD 2: Vector Search
         # =====================================================
         result = self.reasoning.reason(query)
         
-        # Check if we need disambiguation
+        # Check disambiguation
         if result.answer and not result.needs_search:
             raw_results = self.kb.search(query, limit=10)
             
@@ -435,7 +406,7 @@ class ResponseGenerator:
                     context.add_user_message(query)
                     context.add_assistant_response(disambig_response, entities)
                     
-                    sources = [{'url': e['source_url'], 'title': e['source_title']} 
+                    sources = [{'url': e['source_url'], 'title': e['source_title']}
                               for e in entities if e['source_url']]
                     
                     return {
@@ -445,19 +416,40 @@ class ResponseGenerator:
                         'needs_search': False,
                         'disambiguation': True,
                         'options': [e['name'] for e in entities],
-                        'thought_process': [{'step': 'Multiple matches found - asking for clarification',
+                        'thought_process': [{'step': 'Multiple matches - asking for clarification',
                                             'type': 'disambiguation', 'confidence': 0.8}],
-                        'question_type': 'disambiguation'
+                        'question_type': 'disambiguation',
+                        'reasoning_method': 'disambiguation'
                     }
         
-        # Combine with graph reasoning if available but low confidence
+        # Blend graph result if available
         if graph_result and graph_result['confidence'] > 0.1 and result.confidence < 0.5:
-            # Graph has something, vector search weak - blend them
             if graph_result['answer'] and "don't have" not in graph_result['answer']:
                 result.answer = f"{graph_result['answer']}\n\n{result.answer}" if result.answer else graph_result['answer']
                 result.confidence = max(result.confidence, graph_result['confidence'])
         
-        # Update context with this exchange
+        # =====================================================
+        # METHOD 3: Neural Network (if others fail)
+        # =====================================================
+        if self.neural_brain and (not result.answer or result.needs_search):
+            try:
+                neural_result = self.neural_brain.answer(query)
+                
+                if neural_result.get('answer') and neural_result.get('confidence', 0) > 0.3:
+                    # Neural network has something!
+                    if not result.answer:
+                        result.answer = neural_result['answer']
+                        result.confidence = neural_result['confidence']
+                        result.reasoning_method = 'neural_network'
+                        result.needs_search = False
+                    else:
+                        # Blend with existing answer
+                        result.answer = f"{result.answer}\n\n(Neural: {neural_result['answer']})"
+                        result.confidence = max(result.confidence, neural_result['confidence'])
+            except Exception as e:
+                print(f"⚠️ Neural reasoning error: {e}")
+        
+        # Update context
         context.add_user_message(query)
         
         if result.answer:
@@ -475,7 +467,7 @@ class ResponseGenerator:
             'confidence': result.confidence,
             'sources': result.sources,
             'needs_search': result.needs_search,
-            'reasoning_type': 'vector_search',
+            'reasoning_type': result.reasoning_method,
             'thought_process': result.thought_process,
             'question_type': result.question_type.value
         }
@@ -485,7 +477,6 @@ class ResponseGenerator:
         if not content:
             return f"I found information about {entity_name} but couldn't extract details."
         
-        # Get sentences mentioning the entity
         sentences = re.split(r'(?<=[.!?])\s+', content)
         relevant = []
         
@@ -494,7 +485,6 @@ class ResponseGenerator:
         
         for sent in sentences:
             sent_lower = sent.lower()
-            # Check if sentence mentions entity
             if entity_lower in sent_lower or any(part in sent_lower for part in entity_parts if len(part) > 3):
                 relevant.append(sent)
         
@@ -504,10 +494,19 @@ class ResponseGenerator:
                 answer = answer[:600] + '...'
             return answer
         
-        # Fallback to first part of content
         return content[:500] + ('...' if len(content) > 500 else '')
     
-    def generate_after_learning(self, query: str, 
+    def neural_generate(self, prompt: str, max_tokens: int = 100) -> str:
+        """Direct neural generation (for creative tasks)"""
+        if not self.neural_brain:
+            return "Neural network not available."
+        
+        try:
+            return self.neural_brain.generate(prompt, max_tokens=max_tokens)
+        except Exception as e:
+            return f"Generation error: {e}"
+    
+    def generate_after_learning(self, query: str,
                                 learned: List[Dict] = None,
                                 session_id: str = "default") -> Dict[str, Any]:
         """Generate response after learning"""
@@ -525,7 +524,6 @@ class ResponseGenerator:
                     })
                     seen.add(url)
         
-        # Update context
         context = self.get_context(session_id)
         context.add_user_message(query)
         if result.answer:
