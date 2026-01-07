@@ -264,8 +264,8 @@ class KnowledgeBase:
         # Create query embedding
         query_vector = self.embeddings.embed(query)
         
-        # Search vector store
-        results = self.vectors.search(query_vector, top_k=limit * 2, min_score=min_score)
+        # Search vector store (with query_text for title boosting)
+        results = self.vectors.search(query_vector, top_k=limit * 2, min_score=min_score, query_text=query)
         
         # Also do keyword search and merge results
         keyword_results = self._keyword_search(query, limit)
@@ -380,6 +380,18 @@ class KnowledgeBase:
     def source_exists(self, url: str) -> bool:
         """Check if source already processed"""
         return self.vectors.exists(url)
+    
+    def get_all_source_titles(self) -> List[str]:
+        """Get all learned source titles for strategic learning sync"""
+        try:
+            conn = self._get_connection()
+            cursor = conn.execute("SELECT title FROM sources WHERE title IS NOT NULL")
+            titles = [row[0] for row in cursor.fetchall()]
+            conn.close()
+            return titles
+        except Exception as e:
+            print(f"Error getting source titles: {e}")
+            return []
     
     def get_statistics(self) -> Dict[str, Any]:
         """Get knowledge base statistics"""

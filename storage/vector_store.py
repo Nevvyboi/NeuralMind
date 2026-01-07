@@ -1,19 +1,6 @@
 """
-Vector Store - Scalable FAISS Edition
-=====================================
-Memory-mapped FAISS index for handling millions of vectors.
-
-Changes from original:
-- FAISS memory-mapped index (uses disk, not RAM)
-- Handles 1M+ vectors without crashing
-- Faster search with proper indexing
-- Same API - drop-in replacement
-
-Scale:
-- 10K vectors: ~10 MB RAM
-- 100K vectors: ~50 MB RAM  
-- 1M vectors: ~100 MB RAM
-- 10M vectors: ~500 MB RAM
+Vector Store - FIXED VERSION with proper subject extraction
+===========================================================
 """
 
 import numpy as np
@@ -21,31 +8,20 @@ import sqlite3
 import threading
 import json
 import hashlib
+import re
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 
-# Try to import FAISS
 try:
     import faiss
     FAISS_AVAILABLE = True
 except ImportError:
     FAISS_AVAILABLE = False
     print("⚠️ FAISS not available. Install with: pip install faiss-cpu")
-    print("   Using brute force search (slower but works)")
 
 
 class VectorStore:
-    """
-    Scalable vector database with FAISS memory-mapped index.
-    
-    Architecture:
-    - SQLite: metadata storage (content, sources, etc.)
-    - FAISS: memory-mapped vector index (fast similarity search)
-    - Memory-mapping: reads from disk, doesn't load all into RAM
-    
-    This is a drop-in replacement for the old VectorStore.
-    Same API, but can handle millions of vectors.
-    """
+    """Vector database with FAISS and smart title matching."""
     
     def __init__(self, data_dir: Path, dimension: int = 256):
         self.data_dir = Path(data_dir)
@@ -55,21 +31,14 @@ class VectorStore:
         self.db_path = self.data_dir / "vectors.db"
         self.index_path = self.data_dir / "vectors.faiss"
         
-        # Thread safety
         self._lock = threading.RLock()
-        
-        # FAISS index
         self.index = None
-        
-        # In-memory cache for brute force fallback
         self._vector_cache: Dict[int, np.ndarray] = {}
         
-        # Initialize
         self._init_database()
         self._load_index()
     
     def _get_connection(self) -> sqlite3.Connection:
-        """Get database connection with proper settings"""
         conn = sqlite3.connect(
             str(self.db_path),
             timeout=30.0,
@@ -81,10 +50,7 @@ class VectorStore:
         return conn
     
     def _init_database(self) -> None:
-        """Initialize SQLite database"""
         conn = self._get_connection()
-        
-        # Main vectors table
         conn.execute("""
             CREATE TABLE IF NOT EXISTS vectors (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -98,17 +64,13 @@ class VectorStore:
                 metadata TEXT DEFAULT '{}'
             )
         """)
-        
-        # Indexes
         conn.execute("CREATE INDEX IF NOT EXISTS idx_source_url ON vectors(source_url)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_source_title ON vectors(source_title)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_content_hash ON vectors(content_hash)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_created_at ON vectors(created_at DESC)")
-        
         conn.close()
     
     def _load_index(self) -> None:
-        """Load FAISS index from disk or build from database"""
         if not FAISS_AVAILABLE:
             self._load_vectors_to_cache()
             return
@@ -116,31 +78,26 @@ class VectorStore:
         with self._lock:
             if self.index_path.exists():
                 try:
-                    # Load with memory mapping - KEY FOR SCALABILITY
                     self.index = faiss.read_index(
                         str(self.index_path),
-                        faiss.IO_FLAG_MMAP  # Memory-mapped!
+                        faiss.IO_FLAG_MMAP
                     )
-                    print(f"✅ Loaded FAISS index (memory-mapped): {self.index.ntotal} vectors")
+                    print(f"✅ Loaded FAISS index: {self.index.ntotal} vectors")
                     return
                 except Exception as e:
                     print(f"⚠️ Could not load FAISS index: {e}")
             
-            # Build new index from database
             self._rebuild_faiss_index()
     
     def _rebuild_faiss_index(self) -> None:
-        """Rebuild FAISS index from database vectors"""
         if not FAISS_AVAILABLE:
             return
         
         print("🔄 Building FAISS index from database...")
         
-        # Create new index
         base_index = faiss.IndexFlatIP(self.dimension)
         self.index = faiss.IndexIDMap(base_index)
         
-        # Load vectors from database
         conn = self._get_connection()
         rows = conn.execute(
             "SELECT id, vector_data FROM vectors WHERE vector_data IS NOT NULL"
@@ -151,7 +108,6 @@ class VectorStore:
             print("✨ Created empty FAISS index")
             return
         
-        # Batch add to FAISS
         ids = []
         vectors = []
         
@@ -168,16 +124,12 @@ class VectorStore:
         if vectors:
             vectors_np = np.array(vectors, dtype=np.float32)
             ids_np = np.array(ids, dtype=np.int64)
-            
-            # Normalize for cosine similarity
             faiss.normalize_L2(vectors_np)
-            
             self.index.add_with_ids(vectors_np, ids_np)
             self._save_index()
             print(f"✅ Built FAISS index: {len(vectors)} vectors")
     
     def _load_vectors_to_cache(self) -> None:
-        """Load vectors into memory cache (fallback without FAISS)"""
         conn = self._get_connection()
         rows = conn.execute(
             "SELECT id, vector_data FROM vectors WHERE vector_data IS NOT NULL"
@@ -197,7 +149,6 @@ class VectorStore:
             print(f"✅ Loaded {len(self._vector_cache)} vectors into memory")
     
     def _save_index(self) -> None:
-        """Save FAISS index to disk"""
         if FAISS_AVAILABLE and self.index is not None:
             try:
                 faiss.write_index(self.index, str(self.index_path))
@@ -205,29 +156,71 @@ class VectorStore:
                 print(f"⚠️ Could not save FAISS index: {e}")
     
     def _content_hash(self, content: str) -> str:
-        """Generate hash for deduplication"""
         return hashlib.md5(content.encode()).hexdigest()
     
     def _normalize(self, vector: np.ndarray) -> np.ndarray:
-        """Normalize vector for cosine similarity"""
         vector = np.array(vector, dtype=np.float32).flatten()
         norm = np.linalg.norm(vector)
         if norm > 0:
             vector = vector / norm
         return vector
     
+    def _extract_subject(self, query: str) -> str:
+        """
+        Extract the SUBJECT from a query.
+        "Tell me about France" -> "France"
+        "What is the capital of France" -> "capital of France"
+        "Who is Albert Einstein" -> "Albert Einstein"
+        """
+        if not query:
+            return ""
+        
+        query = query.strip()
+        query_lower = query.lower()
+        
+        # Remove common question prefixes
+        prefixes = [
+            r'^tell me about\s+',
+            r'^what is\s+',
+            r'^what are\s+',
+            r'^who is\s+',
+            r'^who are\s+',
+            r'^where is\s+',
+            r'^when is\s+',
+            r'^when was\s+',
+            r'^how is\s+',
+            r'^describe\s+',
+            r'^explain\s+',
+            r'^define\s+',
+            r'^what do you know about\s+',
+            r'^can you tell me about\s+',
+            r'^i want to know about\s+',
+            r'^information about\s+',
+            r'^info on\s+',
+        ]
+        
+        subject = query
+        for prefix in prefixes:
+            match = re.match(prefix, query_lower)
+            if match:
+                # Extract the part after the prefix, preserving original case
+                subject = query[match.end():].strip()
+                break
+        
+        # Remove trailing punctuation
+        subject = re.sub(r'[?.!]+$', '', subject).strip()
+        
+        # Remove articles at the start
+        subject = re.sub(r'^(the|a|an)\s+', '', subject, flags=re.IGNORECASE).strip()
+        
+        return subject
+    
     def add(self, vector: np.ndarray, content: str,
             source_url: str = '', source_title: str = '',
             confidence: float = 0.5, metadata: Dict = None) -> int:
-        """
-        Add a vector to the store.
-        
-        Returns: ID of the inserted vector (0 if duplicate)
-        """
         if metadata is None:
             metadata = {}
         
-        # Normalize vector
         vector = self._normalize(vector)
         vector_blob = vector.tobytes()
         content_hash = self._content_hash(content)
@@ -235,7 +228,6 @@ class VectorStore:
         with self._lock:
             conn = self._get_connection()
             
-            # Check for duplicate
             existing = conn.execute(
                 "SELECT id FROM vectors WHERE content_hash = ?",
                 (content_hash,)
@@ -243,9 +235,8 @@ class VectorStore:
             
             if existing:
                 conn.close()
-                return 0  # Duplicate
+                return 0
             
-            # Insert
             cursor = conn.execute(
                 """INSERT INTO vectors 
                    (content, content_hash, source_url, source_title, confidence, vector_data, metadata)
@@ -256,13 +247,11 @@ class VectorStore:
             vector_id = cursor.lastrowid
             conn.close()
             
-            # Add to FAISS
             if FAISS_AVAILABLE and self.index is not None:
                 vector_2d = vector.reshape(1, -1)
                 ids = np.array([vector_id], dtype=np.int64)
                 self.index.add_with_ids(vector_2d, ids)
                 
-                # Save periodically
                 if vector_id % 100 == 0:
                     self._save_index()
             else:
@@ -271,32 +260,89 @@ class VectorStore:
             return vector_id
     
     def search(self, query_vector: np.ndarray, top_k: int = 10,
-               min_score: float = 0.0) -> List[Dict[str, Any]]:
+               min_score: float = 0.0, query_text: str = "") -> List[Dict[str, Any]]:
         """
-        Search for similar vectors using semantic similarity.
-        
-        Args:
-            query_vector: The query embedding
-            top_k: Number of results
-            min_score: Minimum similarity (0-1)
-        
-        Returns:
-            List of matching documents with scores
+        Search with SUBJECT EXTRACTION and TITLE MATCHING.
         """
         query_vector = self._normalize(query_vector).reshape(1, -1)
         results = []
+        seen_ids = set()
+        
+        # Extract the SUBJECT from the query
+        subject = self._extract_subject(query_text) if query_text else ""
+        subject_lower = subject.lower().strip()
         
         with self._lock:
+            conn = self._get_connection()
+            conn.row_factory = sqlite3.Row
+            
+            # === DIRECT TITLE LOOKUP using extracted SUBJECT ===
+            if subject_lower and len(subject_lower) > 1:
+                # 1. Exact title match
+                exact_row = conn.execute(
+                    "SELECT * FROM vectors WHERE LOWER(source_title) = ? LIMIT 1",
+                    (subject_lower,)
+                ).fetchone()
+                
+                if exact_row:
+                    results.append({
+                        'id': exact_row['id'],
+                        'content': exact_row['content'],
+                        'source_url': exact_row['source_url'],
+                        'source_title': exact_row['source_title'],
+                        'confidence': exact_row['confidence'],
+                        'relevance': 1.0,  # Perfect match!
+                        'metadata': json.loads(exact_row['metadata'] or '{}')
+                    })
+                    seen_ids.add(exact_row['id'])
+                
+                # 2. Title starts with subject
+                if len(results) < top_k:
+                    starts_rows = conn.execute(
+                        "SELECT * FROM vectors WHERE LOWER(source_title) LIKE ? ORDER BY LENGTH(source_title) LIMIT 5",
+                        (subject_lower + '%',)
+                    ).fetchall()
+                    
+                    for row in starts_rows:
+                        if row['id'] not in seen_ids:
+                            results.append({
+                                'id': row['id'],
+                                'content': row['content'],
+                                'source_url': row['source_url'],
+                                'source_title': row['source_title'],
+                                'confidence': row['confidence'],
+                                'relevance': 0.95,
+                                'metadata': json.loads(row['metadata'] or '{}')
+                            })
+                            seen_ids.add(row['id'])
+                
+                # 3. Subject appears anywhere in title
+                if len(results) < top_k and len(subject_lower) > 2:
+                    contains_rows = conn.execute(
+                        "SELECT * FROM vectors WHERE LOWER(source_title) LIKE ? ORDER BY LENGTH(source_title) LIMIT 5",
+                        ('%' + subject_lower + '%',)
+                    ).fetchall()
+                    
+                    for row in contains_rows:
+                        if row['id'] not in seen_ids:
+                            results.append({
+                                'id': row['id'],
+                                'content': row['content'],
+                                'source_url': row['source_url'],
+                                'source_title': row['source_title'],
+                                'confidence': row['confidence'],
+                                'relevance': 0.85,
+                                'metadata': json.loads(row['metadata'] or '{}')
+                            })
+                            seen_ids.add(row['id'])
+            
+            # === FAISS VECTOR SEARCH ===
             if FAISS_AVAILABLE and self.index is not None and self.index.ntotal > 0:
-                # FAISS search
-                k = min(top_k * 2, self.index.ntotal)
+                k = min(top_k * 3, self.index.ntotal)
                 scores, ids = self.index.search(query_vector, k)
                 
-                conn = self._get_connection()
-                conn.row_factory = sqlite3.Row
-                
                 for score, vec_id in zip(scores[0], ids[0]):
-                    if vec_id < 0:
+                    if vec_id < 0 or int(vec_id) in seen_ids:
                         continue
                     
                     similarity = float(score)
@@ -308,56 +354,79 @@ class VectorStore:
                     ).fetchone()
                     
                     if row:
+                        title = row['source_title'] or ""
+                        title_lower = title.lower()
+                        
+                        # Title boosting
+                        title_boost = 0.0
+                        if subject_lower:
+                            if title_lower == subject_lower:
+                                title_boost = 0.5
+                            elif title_lower.startswith(subject_lower):
+                                title_boost = 0.4
+                            elif subject_lower in title_lower:
+                                title_boost = 0.25
+                        
+                        boosted_score = min(1.0, similarity + title_boost)
+                        
                         results.append({
                             'id': row['id'],
                             'content': row['content'],
                             'source_url': row['source_url'],
                             'source_title': row['source_title'],
                             'confidence': row['confidence'],
-                            'relevance': similarity,
+                            'relevance': boosted_score,
                             'metadata': json.loads(row['metadata'] or '{}')
                         })
-                    
-                    if len(results) >= top_k:
-                        break
-                
-                conn.close()
+                        seen_ids.add(row['id'])
             
             elif self._vector_cache:
                 # Brute force fallback
                 similarities = []
                 for vec_id, vec in self._vector_cache.items():
+                    if vec_id in seen_ids:
+                        continue
                     sim = float(np.dot(query_vector.flatten(), vec))
                     if sim >= min_score:
                         similarities.append((vec_id, sim))
                 
                 similarities.sort(key=lambda x: x[1], reverse=True)
                 
-                conn = self._get_connection()
-                conn.row_factory = sqlite3.Row
-                
-                for vec_id, sim in similarities[:top_k]:
+                for vec_id, sim in similarities[:top_k * 2]:
                     row = conn.execute(
                         "SELECT * FROM vectors WHERE id = ?", (vec_id,)
                     ).fetchone()
                     
                     if row:
+                        title = row['source_title'] or ""
+                        title_lower = title.lower()
+                        
+                        title_boost = 0.0
+                        if subject_lower:
+                            if title_lower == subject_lower:
+                                title_boost = 0.5
+                            elif subject_lower in title_lower:
+                                title_boost = 0.2
+                        
+                        boosted_score = min(1.0, sim + title_boost)
+                        
                         results.append({
                             'id': row['id'],
                             'content': row['content'],
                             'source_url': row['source_url'],
                             'source_title': row['source_title'],
                             'confidence': row['confidence'],
-                            'relevance': sim,
+                            'relevance': boosted_score,
                             'metadata': json.loads(row['metadata'] or '{}')
                         })
-                
-                conn.close()
+            
+            conn.close()
         
+        # Sort by relevance
+        results.sort(key=lambda x: x['relevance'], reverse=True)
         return results[:top_k]
     
     def get_by_id(self, vector_id: int) -> Optional[Dict[str, Any]]:
-        """Get entry by ID"""
         conn = self._get_connection()
         conn.row_factory = sqlite3.Row
         row = conn.execute("SELECT * FROM vectors WHERE id = ?", (vector_id,)).fetchone()
@@ -375,7 +444,6 @@ class VectorStore:
         return None
     
     def exists(self, source_url: str) -> bool:
-        """Check if source URL exists"""
         conn = self._get_connection()
         row = conn.execute(
             "SELECT id FROM vectors WHERE source_url = ? LIMIT 1", (source_url,)
@@ -384,18 +452,15 @@ class VectorStore:
         return row is not None
     
     def count(self) -> int:
-        """Get total vector count"""
         if FAISS_AVAILABLE and self.index is not None:
             return self.index.ntotal
         return len(self._vector_cache)
     
     def save(self) -> None:
-        """Save FAISS index to disk"""
         self._save_index()
         print(f"💾 Vector store saved: {self.count()} vectors")
     
     def get_stats(self) -> Dict[str, Any]:
-        """Get statistics"""
         try:
             conn = self._get_connection()
             total = conn.execute("SELECT COUNT(*) FROM vectors").fetchone()[0]
@@ -412,12 +477,11 @@ class VectorStore:
             'total_entries': total,
             'unique_sources': sources,
             'dimension': self.dimension,
-            'index_type': 'FAISS (memory-mapped)' if FAISS_AVAILABLE else 'BruteForce',
+            'index_type': 'FAISS' if FAISS_AVAILABLE else 'BruteForce',
             'faiss_available': FAISS_AVAILABLE
         }
     
     def get_recent(self, limit: int = 10) -> List[Dict[str, Any]]:
-        """Get recently added entries"""
         try:
             conn = self._get_connection()
             conn.row_factory = sqlite3.Row
@@ -437,7 +501,6 @@ class VectorStore:
             return []
     
     def get_all_knowledge(self, limit: int = 100) -> List[Dict[str, Any]]:
-        """Get all knowledge entries"""
         try:
             conn = self._get_connection()
             conn.row_factory = sqlite3.Row
@@ -458,7 +521,6 @@ class VectorStore:
             return []
     
     def get_all_with_content(self) -> List[Dict[str, Any]]:
-        """Get all entries with content for re-embedding"""
         try:
             conn = self._get_connection()
             conn.row_factory = sqlite3.Row
@@ -469,7 +531,6 @@ class VectorStore:
             return []
     
     def update_vector(self, entry_id: int, new_vector: np.ndarray) -> None:
-        """Update vector for existing entry"""
         new_vector = self._normalize(new_vector)
         vector_blob = new_vector.tobytes()
         
@@ -482,16 +543,13 @@ class VectorStore:
                 )
                 conn.close()
                 
-                # Update cache
                 if not FAISS_AVAILABLE:
                     self._vector_cache[entry_id] = new_vector
             except Exception as e:
                 print(f"⚠️ Could not update vector: {e}")
     
     def get_related(self, entry_id: int, top_k: int = 5) -> List[Dict[str, Any]]:
-        """Get entries related to a specific entry"""
         with self._lock:
-            # Get vector for this entry
             conn = self._get_connection()
             row = conn.execute(
                 "SELECT vector_data FROM vectors WHERE id = ?", (entry_id,)
@@ -502,11 +560,8 @@ class VectorStore:
                 return []
             
             query_vector = np.frombuffer(row[0], dtype=np.float32)
-            
-            # Search for similar (exclude self)
             results = self.search(query_vector, top_k=top_k + 1, min_score=0.05)
             
-            # Filter out self and format
             related = []
             for r in results:
                 if r['id'] != entry_id:
@@ -520,7 +575,6 @@ class VectorStore:
             return related[:top_k]
     
     def rebuild_index(self) -> None:
-        """Force rebuild of FAISS index"""
         if FAISS_AVAILABLE:
             self._rebuild_faiss_index()
         else:

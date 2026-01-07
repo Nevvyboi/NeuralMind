@@ -18,11 +18,14 @@ class GroundZeroApp {
         this.knowledgeEntries = [];
         this.selectedEntryId = null;
         
-        // Track source count - only refresh every 30 new sources
+        // Track source count
         this.lastSourceCount = 0;
         
         // Prevent concurrent status calls
         this.isLoadingStatus = false;
+        
+        // Manual learning timers (for multiple concurrent)
+        this.learningTimers = {};
         
         this.init();
     }
@@ -57,11 +60,9 @@ class GroundZeroApp {
     }
     
     bindEvents() {
-        // Learning controls
         document.getElementById('start-btn').onclick = () => this.startLearning();
         document.getElementById('stop-btn').onclick = () => this.stopLearning();
         
-        // Chat
         document.getElementById('send-btn').onclick = () => this.sendMessage();
         document.getElementById('chat-input').onkeydown = e => {
             if (e.key === 'Enter' && !e.shiftKey) { 
@@ -70,30 +71,30 @@ class GroundZeroApp {
             }
         };
         
-        // Auto-resize textarea
         document.getElementById('chat-input').oninput = e => {
             e.target.style.height = 'auto';
             e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
         };
         
-        // Teach
         document.getElementById('teach-btn').onclick = () => this.teach();
         
-        // Learn from URL
         document.getElementById('learn-url-btn').onclick = () => this.learnFromUrl();
+        document.getElementById('learn-url').onkeydown = e => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.learnFromUrl();
+            }
+        };
         
-        // Zoom modal
         document.getElementById('zoom-btn').onclick = () => this.openZoomModal();
         document.getElementById('zoom-close').onclick = () => this.closeZoomModal();
         document.getElementById('zoom-modal').onclick = (e) => {
             if (e.target.id === 'zoom-modal') this.closeZoomModal();
         };
         
-        // Fullscreen
         document.getElementById('fullscreen-btn').onclick = () => this.toggleFullscreen();
         document.addEventListener('fullscreenchange', () => this.updateFullscreenButton());
         
-        // Knowledge Explorer
         document.getElementById('knowledge-explorer-btn').onclick = () => this.openKnowledgeExplorer();
         document.getElementById('ke-close').onclick = () => this.closeKnowledgeExplorer();
         document.getElementById('knowledge-explorer-modal').onclick = (e) => {
@@ -101,7 +102,6 @@ class GroundZeroApp {
         };
         document.getElementById('ke-search-input').oninput = (e) => this.filterKnowledge(e.target.value);
         
-        // Clear chat context
         document.getElementById('clear-chat-btn').onclick = () => this.clearChatContext();
         
         document.addEventListener('keydown', (e) => {
@@ -112,13 +112,9 @@ class GroundZeroApp {
         });
     }
     
-    // ========== CLEAR CHAT ==========
-    
     async clearChatContext() {
         try {
             await fetch('/api/chat/clear-context', { method: 'POST' });
-            
-            // Clear UI
             const container = document.getElementById('chat-messages');
             container.innerHTML = `
                 <div class="message ai">
@@ -130,23 +126,18 @@ class GroundZeroApp {
                     </div>
                 </div>
             `;
-            
             this.toast('Chat context cleared', 'success');
         } catch (e) {
             this.toast('Failed to clear context', 'error');
         }
     }
     
-    // ========== FULLSCREEN ==========
-    
     toggleFullscreen() {
         if (!document.fullscreenElement) {
-            // Enter fullscreen
             document.documentElement.requestFullscreen().catch(err => {
                 this.toast('Fullscreen not available', 'error');
             });
         } else {
-            // Exit fullscreen
             document.exitFullscreen();
         }
     }
@@ -167,8 +158,6 @@ class GroundZeroApp {
         }
     }
     
-    // ========== ZOOM MODAL ==========
-    
     openZoomModal() {
         const modal = document.getElementById('zoom-modal');
         const content = document.getElementById('zoom-content');
@@ -188,7 +177,7 @@ class GroundZeroApp {
             stats.textContent = `${words.length.toLocaleString()} words`;
             content.textContent = this.currentFullContent;
         } else {
-            content.innerHTML = '<p class="empty-text">No content loaded yet. Start learning to see full content here.</p>';
+            content.innerHTML = '<p class="empty-text">No content loaded yet.</p>';
             stats.textContent = '0 words';
         }
     }
@@ -198,15 +187,11 @@ class GroundZeroApp {
         document.body.style.overflow = '';
     }
     
-    // ========== TIMER ==========
-    
     startTimer() {
         this.timerElapsed = 0;
         this.timerStartTime = Date.now();
-        
         document.getElementById('learning-timer').classList.add('active');
         document.getElementById('timer-status').textContent = 'RUNNING';
-        
         if (this.timerInterval) clearInterval(this.timerInterval);
         this.timerInterval = setInterval(() => this.updateTimer(), 1000);
         this.updateTimer();
@@ -235,7 +220,11 @@ class GroundZeroApp {
         return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
     
-    // ========== STATUS & STATS ==========
+    formatSeconds(ms) {
+        const seconds = Math.floor(ms / 1000);
+        const tenths = Math.floor((ms % 1000) / 100);
+        return `${seconds}.${tenths}s`;
+    }
     
     async loadStatus() {
         if (this.isLoadingStatus) return;
@@ -250,7 +239,6 @@ class GroundZeroApp {
             if (data.stats) {
                 const stats = data.stats;
                 
-                // Update article title, URL, and content
                 if (stats.current_article) {
                     this.safeSetText('current-url', stats.current_article);
                     this.currentTitle = stats.current_article;
@@ -266,14 +254,12 @@ class GroundZeroApp {
                     if (previewEl) previewEl.textContent = stats.current_content.substring(0, 500) + '...';
                 }
                 
-                // Update session stats
                 if (stats.current_session) {
                     this.safeSetText('current-articles', stats.current_session.articles_read || 0);
                     this.safeSetText('current-words', this.formatNum(stats.current_session.words_learned || 0));
                     this.safeSetText('current-knowledge', stats.current_session.knowledge_added || 0);
                 }
                 
-                // Update running state
                 if (stats.is_running && !this.isLearning) {
                     this.isLearning = true;
                     this.updateLearningUI(true);
@@ -284,11 +270,9 @@ class GroundZeroApp {
                     this.updateLearningUI(false);
                     this.stopPolling();
                     this.stopTimer();
-                    // Load sources when learning stops
                     this.loadRecentSources();
                 }
                 
-                // Update totals
                 if (stats.total) {
                     const total = stats.total;
                     this.safeSetText('vocab-count', this.formatNum(total.vocabulary_size || 0));
@@ -309,10 +293,8 @@ class GroundZeroApp {
                         this.safeSetText('sessions-count', this.formatNum(total.total_sessions));
                     }
                     
-                    // Update knowledge explorer badge
                     this.safeSetText('knowledge-badge', this.formatNum(total.total_knowledge || 0));
                     
-                    // Only update sources every 30 new sources
                     const newSourceCount = total.total_sources || 0;
                     if (newSourceCount >= this.lastSourceCount + 30) {
                         this.lastSourceCount = newSourceCount;
@@ -357,8 +339,6 @@ class GroundZeroApp {
         if (el) el.textContent = value;
     }
     
-    // ========== LEARNING ==========
-    
     async startLearning() {
         try {
             document.getElementById('current-url').textContent = 'Finding content...';
@@ -391,7 +371,6 @@ class GroundZeroApp {
             this.loadStatus();
             this.loadSessions();
             
-            // Reset current session display
             document.getElementById('current-articles').textContent = '0';
             document.getElementById('current-words').textContent = '0';
             document.getElementById('current-knowledge').textContent = '0';
@@ -402,7 +381,6 @@ class GroundZeroApp {
     
     startPolling() {
         if (this.pollInterval) return;
-        // Poll every 2 seconds - gives time for requests to complete
         this.pollInterval = setInterval(() => this.loadStatus(), 2000);
     }
     
@@ -422,8 +400,6 @@ class GroundZeroApp {
         status.className = isLearning ? 'stat-pill status learning' : 'stat-pill status';
         status.innerHTML = `<span class="pulse"></span>${isLearning ? 'Learning' : 'Ready'}`;
     }
-    
-    // ========== CHAT ==========
     
     async sendMessage() {
         const input = document.getElementById('chat-input');
@@ -524,8 +500,6 @@ class GroundZeroApp {
             .split('<br><br>').map(p => `<p>${p}</p>`).join('');
     }
     
-    // ========== TEACH ==========
-    
     async teach() {
         const content = document.getElementById('teach-content').value.trim();
         if (!content) {
@@ -554,10 +528,13 @@ class GroundZeroApp {
         }
     }
     
-    // ========== LEARN FROM URL ==========
+    // ========== LEARN FROM URL - BACKGROUND PROCESSING ==========
     
     async learnFromUrl() {
-        const url = document.getElementById('learn-url').value.trim();
+        const urlInput = document.getElementById('learn-url');
+        const btn = document.getElementById('learn-url-btn');
+        const url = urlInput.value.trim();
+        
         if (!url) {
             this.toast('Enter a URL', 'error');
             return;
@@ -567,9 +544,27 @@ class GroundZeroApp {
             return;
         }
         
-        this.toast('Fetching and learning...', 'info');
+        // Create inline progress indicator
+        const progressId = this.showInlineProgress(url);
+        
+        // Clear input immediately so user can paste another URL
+        urlInput.value = '';
+        
+        // Update button to show activity
+        const originalBtnText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-small"></span>';
+        btn.classList.add('loading');
+        
+        // Start timer for this specific learning task
+        const startTime = Date.now();
+        this.learningTimers[progressId] = setInterval(() => {
+            this.updateProgressTimer(progressId, startTime);
+        }, 100);
         
         try {
+            // Stage 1: Sending request
+            this.updateInlineProgress(progressId, 'searching', `Sending ${this.extractDomain(url)}`, startTime);
+            
             const res = await fetch('/api/learn/url', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -577,23 +572,251 @@ class GroundZeroApp {
             });
             
             const data = await res.json();
+            
             if (data.success) {
-                this.toast('Learned from URL!', 'success');
-                this.addAIMessage({
-                    response: `I learned from: **${data.title || 'Web page'}**\n\nI processed the content and added it to my knowledge base.`,
-                    sources: [{ url, title: data.title || 'Web Page' }]
-                });
-                this.loadRecentSources();
+                // Check if it's background processing or immediate completion
+                if (data.status === 'processing') {
+                    // Backend started processing in background
+                    this.updateInlineProgress(progressId, 'processing', 'Processing in background...', startTime);
+                    
+                    // Stop timer
+                    if (this.learningTimers[progressId]) {
+                        clearInterval(this.learningTimers[progressId]);
+                        delete this.learningTimers[progressId];
+                    }
+                    
+                    // Show completion after brief delay
+                    await this.sleep(500);
+                    this.completeInlineProgress(progressId, 'Queued ✓', startTime, 'success');
+                    
+                    // Poll for actual completion
+                    this.pollForNewSource(url, progressId);
+                    
+                } else {
+                    // Immediate completion (shouldn't happen with new backend but handle it)
+                    this.updateInlineProgress(progressId, 'storing', 'Storing knowledge', startTime);
+                    await this.sleep(200);
+                    this.completeInlineProgress(progressId, data.title || 'Learned!', startTime);
+                    this.addLearningSuccessMessage(data, url);
+                    this.refreshAllStats();
+                }
+                
+            } else if (data.duplicate) {
+                this.completeInlineProgress(progressId, 'Already known', startTime, 'info');
             } else {
-                this.toast(data.message || data.reason || 'Failed to learn from URL', 'error');
+                this.failInlineProgress(progressId, data.message || data.error || 'Failed', startTime);
             }
-            document.getElementById('learn-url').value = '';
+            
         } catch (e) {
-            this.toast('Failed to learn from URL', 'error');
+            console.error('Learn URL error:', e);
+            this.failInlineProgress(progressId, 'Network error', startTime);
+        } finally {
+            // Stop timer if still running
+            if (this.learningTimers[progressId]) {
+                clearInterval(this.learningTimers[progressId]);
+                delete this.learningTimers[progressId];
+            }
+            
+            // Reset button
+            btn.innerHTML = originalBtnText || '🌐 Learn';
+            btn.classList.remove('loading');
         }
     }
     
-    // ========== SESSION TRACKING ==========
+    async pollForNewSource(url, progressId) {
+        // Poll for completion in background - check if source was added
+        const domain = this.extractDomain(url);
+        let attempts = 0;
+        const maxAttempts = 30; // Poll for up to 60 seconds (30 * 2s)
+        
+        const poll = async () => {
+            attempts++;
+            try {
+                await this.loadRecentSources();
+                await this.loadStatus();
+                
+                // Check if we've exceeded max attempts
+                if (attempts >= maxAttempts) {
+                    this.toast(`Learning ${domain} - check Recent Sources`, 'info');
+                    return;
+                }
+                
+                // Continue polling
+                setTimeout(poll, 2000);
+            } catch (e) {
+                // Stop polling on error
+            }
+        };
+        
+        // Start polling after 3 seconds
+        setTimeout(poll, 3000);
+    }
+    
+    showInlineProgress(url) {
+        const container = document.getElementById('learning-progress-container');
+        if (!container) return null;
+        
+        const progressId = 'progress-' + Date.now();
+        const domain = this.extractDomain(url);
+        
+        const el = document.createElement('div');
+        el.className = 'inline-progress';
+        el.id = progressId;
+        el.innerHTML = `
+            <span class="progress-dot searching"></span>
+            <span class="progress-text">Searching ${domain}</span>
+            <span class="progress-timer">0.0s</span>
+        `;
+        
+        container.appendChild(el);
+        return progressId;
+    }
+    
+    updateInlineProgress(progressId, stage, text, startTime) {
+        if (!progressId) return;
+        const el = document.getElementById(progressId);
+        if (!el) return;
+        
+        const dot = el.querySelector('.progress-dot');
+        const textEl = el.querySelector('.progress-text');
+        
+        // Update dot color based on stage
+        dot.className = `progress-dot ${stage}`;
+        textEl.textContent = text;
+        
+        this.updateProgressTimer(progressId, startTime);
+    }
+    
+    updateProgressTimer(progressId, startTime) {
+        if (!progressId) return;
+        const el = document.getElementById(progressId);
+        if (!el) return;
+        
+        const timerEl = el.querySelector('.progress-timer');
+        if (timerEl) {
+            timerEl.textContent = this.formatSeconds(Date.now() - startTime);
+        }
+    }
+    
+    completeInlineProgress(progressId, text, startTime, type = 'success') {
+        if (!progressId) return;
+        const el = document.getElementById(progressId);
+        if (!el) return;
+        
+        // Stop timer
+        if (this.learningTimers[progressId]) {
+            clearInterval(this.learningTimers[progressId]);
+            delete this.learningTimers[progressId];
+        }
+        
+        const dot = el.querySelector('.progress-dot');
+        const textEl = el.querySelector('.progress-text');
+        const timerEl = el.querySelector('.progress-timer');
+        
+        dot.className = `progress-dot ${type}`;
+        textEl.textContent = type === 'success' ? `✓ ${text}` : `ℹ ${text}`;
+        timerEl.textContent = this.formatSeconds(Date.now() - startTime);
+        
+        el.classList.add('complete');
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            el.classList.add('fade-out');
+            setTimeout(() => el.remove(), 400);
+        }, 3000);
+    }
+    
+    failInlineProgress(progressId, reason, startTime) {
+        if (!progressId) return;
+        const el = document.getElementById(progressId);
+        if (!el) return;
+        
+        // Stop timer
+        if (this.learningTimers[progressId]) {
+            clearInterval(this.learningTimers[progressId]);
+            delete this.learningTimers[progressId];
+        }
+        
+        const dot = el.querySelector('.progress-dot');
+        const textEl = el.querySelector('.progress-text');
+        const timerEl = el.querySelector('.progress-timer');
+        
+        dot.className = 'progress-dot error';
+        textEl.textContent = `✗ ${reason}`;
+        timerEl.textContent = this.formatSeconds(Date.now() - startTime);
+        
+        el.classList.add('failed');
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            el.classList.add('fade-out');
+            setTimeout(() => el.remove(), 400);
+        }, 5000);
+    }
+    
+    addLearningSuccessMessage(data, url) {
+        const container = document.getElementById('chat-messages');
+        const div = document.createElement('div');
+        div.className = 'message ai learning-notification';
+        
+        const wordCount = data.word_count || data.words_added || 'new';
+        
+        div.innerHTML = `
+            <div class="avatar">🎓</div>
+            <div class="content">
+                <div class="learning-success-badge">✨ New Knowledge Added</div>
+                <p><strong>${this.escapeHtml(data.title || 'Web page')}</strong></p>
+                <p>I learned ${typeof wordCount === 'number' ? wordCount.toLocaleString() + ' words' : 'content'} from this source.</p>
+                <div class="sources">
+                    <a href="${url}" target="_blank">View source →</a>
+                </div>
+                <span class="time">Just now</span>
+            </div>
+        `;
+        
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+    
+    async refreshAllStats() {
+        await Promise.all([
+            this.loadStatus(),
+            this.loadRecentSources(),
+            this.updateNeuralBadge()
+        ]);
+    }
+    
+    async updateNeuralBadge() {
+        try {
+            const res = await fetch('/api/stats');
+            const data = await res.json();
+            
+            if (data.neural && data.neural.available) {
+                const badge = document.getElementById('neural-badge');
+                if (badge) badge.textContent = this.formatNum(data.neural.model_params || 0);
+                
+                const tokensEl = document.getElementById('current-neural-tokens');
+                if (tokensEl && data.neural.total_tokens_trained) {
+                    tokensEl.textContent = this.formatNum(data.neural.total_tokens_trained);
+                }
+            }
+        } catch (e) {}
+    }
+    
+    extractDomain(url) {
+        try {
+            const parsed = new URL(url);
+            return parsed.hostname.replace('www.', '');
+        } catch (e) {
+            return url.substring(0, 30) + '...';
+        }
+    }
+    
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
+    // ========== SESSIONS ==========
     
     initSessionTracking() {
         const expandBtn = document.getElementById('expand-sessions-btn');
@@ -623,12 +846,12 @@ class GroundZeroApp {
             const data = await res.json();
             
             if (data.summary) {
-                document.getElementById('total-sessions').textContent = this.formatNum(data.summary.total_sessions || 0);
-                document.getElementById('total-articles').textContent = this.formatNum(data.summary.total_articles || 0);
-                document.getElementById('total-words-learned').textContent = this.formatNum(data.summary.total_words || 0);
-                document.getElementById('total-knowledge-added').textContent = this.formatNum(data.summary.total_knowledge || 0);
-                document.getElementById('total-learning-time').textContent = this.formatDuration(data.summary.total_time_seconds || 0);
-                document.getElementById('sessions-count').textContent = this.formatNum(data.summary.total_sessions || 0);
+                this.safeSetText('total-sessions', this.formatNum(data.summary.total_sessions || 0));
+                this.safeSetText('total-articles', this.formatNum(data.summary.total_articles || 0));
+                this.safeSetText('total-words-learned', this.formatNum(data.summary.total_words || 0));
+                this.safeSetText('total-knowledge-added', this.formatNum(data.summary.total_knowledge || 0));
+                this.safeSetText('total-learning-time', this.formatDuration(data.summary.total_time_seconds || 0));
+                this.safeSetText('sessions-count', this.formatNum(data.summary.total_sessions || 0));
             }
             
             const listEl = document.getElementById('session-list');
@@ -649,9 +872,7 @@ class GroundZeroApp {
             } else {
                 listEl.innerHTML = '<div class="no-sessions">No sessions yet</div>';
             }
-        } catch (e) {
-            console.error('Failed to load sessions:', e);
-        }
+        } catch (e) {}
     }
     
     // ========== KNOWLEDGE EXPLORER ==========
@@ -661,7 +882,6 @@ class GroundZeroApp {
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
         
-        // Reset state
         this.knowledgeEntries = [];
         this.selectedEntryId = null;
         document.getElementById('ke-search-input').value = '';
@@ -689,8 +909,7 @@ class GroundZeroApp {
             this.knowledgeEntries = data.entries || [];
             this.renderKnowledgeList(this.knowledgeEntries);
         } catch (e) {
-            listEl.innerHTML = '<div class="ke-loading">Failed to load knowledge base</div>';
-            console.error('Failed to load knowledge:', e);
+            listEl.innerHTML = '<div class="ke-loading">Failed to load</div>';
         }
     }
     
@@ -698,7 +917,7 @@ class GroundZeroApp {
         const listEl = document.getElementById('ke-list');
         
         if (entries.length === 0) {
-            listEl.innerHTML = '<div class="ke-empty">No knowledge entries yet.<br>Start learning to build your knowledge base!</div>';
+            listEl.innerHTML = '<div class="ke-empty">No knowledge entries yet.</div>';
             return;
         }
         
@@ -709,7 +928,6 @@ class GroundZeroApp {
             </div>
         `).join('');
         
-        // Add click handlers
         listEl.querySelectorAll('.ke-item').forEach(item => {
             item.onclick = () => this.selectKnowledgeEntry(parseInt(item.dataset.id));
         });
@@ -730,24 +948,20 @@ class GroundZeroApp {
     async selectKnowledgeEntry(entryId) {
         this.selectedEntryId = entryId;
         
-        // Update selection in list
         document.querySelectorAll('.ke-item').forEach(item => {
             item.classList.toggle('selected', parseInt(item.dataset.id) === entryId);
         });
         
-        // Find entry
         const entry = this.knowledgeEntries.find(e => e.id === entryId);
         if (!entry) return;
         
-        // Update detail panel
         document.getElementById('ke-detail-title').textContent = entry.title || 'Untitled';
         const confEl = document.getElementById('ke-detail-confidence');
         confEl.textContent = `${Math.round((entry.confidence || 0.5) * 100)}% confidence`;
         confEl.style.display = 'inline-block';
         
-        // Load related topics
         const relatedEl = document.getElementById('ke-related-list');
-        relatedEl.innerHTML = '<div class="ke-loading-small">Finding related topics...</div>';
+        relatedEl.innerHTML = '<div class="ke-loading-small">Finding related...</div>';
         
         try {
             const res = await fetch(`/api/knowledge/${entryId}/related?limit=10`);
@@ -761,7 +975,6 @@ class GroundZeroApp {
                     </div>
                 `).join('');
                 
-                // Add click handlers for related items
                 relatedEl.querySelectorAll('.ke-related-item').forEach(item => {
                     item.onclick = () => this.selectKnowledgeEntry(parseInt(item.dataset.id));
                 });
@@ -769,8 +982,7 @@ class GroundZeroApp {
                 relatedEl.innerHTML = '<p class="ke-hint">No related topics found</p>';
             }
         } catch (e) {
-            relatedEl.innerHTML = '<p class="ke-hint">Failed to load related topics</p>';
-            console.error('Failed to load related:', e);
+            relatedEl.innerHTML = '<p class="ke-hint">Failed to load</p>';
         }
     }
     
@@ -805,5 +1017,4 @@ class GroundZeroApp {
     }
 }
 
-// Initialize app
 document.addEventListener('DOMContentLoaded', () => new GroundZeroApp());
