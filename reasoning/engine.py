@@ -322,34 +322,46 @@ class ResponseGenerator:
         resolved_entity = context.resolve_reference(query)
         
         if resolved_entity:
-            search_query = f"{resolved_entity.name} {query}"
-            results = self.kb.search(search_query, limit=5)
+            # Handle both tuple and object formats
+            if isinstance(resolved_entity, tuple):
+                entity_name = resolved_entity[0] if resolved_entity and resolved_entity[0] else ""
+            elif hasattr(resolved_entity, 'name'):
+                entity_name = resolved_entity.name if resolved_entity.name else ""
+            else:
+                entity_name = str(resolved_entity) if resolved_entity else ""
             
-            if results and results[0].get('relevance', 0) > 0.3:
-                best_match = results[0]
-                answer = self._extract_focused_answer(resolved_entity.name, best_match.get('content', ''))
+            # Skip if we couldn't extract a valid entity name
+            if not entity_name:
+                pass  # Fall through to normal processing below
+            else:
+                search_query = f"{entity_name} {query}"
+                results = self.kb.search(search_query, limit=5)
                 
-                context.add_user_message(query)
-                context.add_assistant_response(answer, [{
-                    'name': resolved_entity.name,
-                    'content': answer[:200],
-                    'source_url': best_match.get('source_url', ''),
-                    'source_title': best_match.get('source_title', ''),
-                    'confidence': best_match.get('relevance', 0.7)
-                }])
-                
-                return {
-                    'response': answer,
-                    'confidence': best_match.get('relevance', 0.7),
-                    'sources': [{'url': best_match.get('source_url', ''),
-                                'title': best_match.get('source_title', '')}],
-                    'needs_search': False,
-                    'resolved_from': resolved_entity.name,
-                    'thought_process': [{'step': f'Resolved reference to: {resolved_entity.name}',
-                                        'type': 'context', 'confidence': 0.9}],
-                    'question_type': 'definition',
-                    'reasoning_method': 'context_resolution'
-                }
+                if results and results[0].get('relevance', 0) > 0.3:
+                    best_match = results[0]
+                    answer = self._extract_focused_answer(entity_name, best_match.get('content', ''))
+                    
+                    context.add_user_message(query)
+                    context.add_assistant_response(answer, [{
+                        'name': entity_name,
+                        'content': answer[:200],
+                        'source_url': best_match.get('source_url', ''),
+                        'source_title': best_match.get('source_title', ''),
+                        'confidence': best_match.get('relevance', 0.7)
+                    }])
+                    
+                    return {
+                        'response': answer,
+                        'confidence': best_match.get('relevance', 0.7),
+                        'sources': [{'url': best_match.get('source_url', ''),
+                                    'title': best_match.get('source_title', '')}],
+                        'needs_search': False,
+                        'resolved_from': entity_name,
+                        'thought_process': [{'step': f'Resolved reference to: {entity_name}',
+                                            'type': 'context', 'confidence': 0.9}],
+                        'question_type': 'definition',
+                        'reasoning_method': 'context_resolution'
+                    }
         
         # =====================================================
         # METHOD 1: Try Knowledge Graph FIRST
@@ -474,6 +486,12 @@ class ResponseGenerator:
     
     def _extract_focused_answer(self, entity_name: str, content: str) -> str:
         """Extract answer focused on a specific entity"""
+        # Handle None or empty entity_name
+        if not entity_name:
+            if not content:
+                return "I found some information but couldn't extract details."
+            return content[:500] + ('...' if len(content) > 500 else '')
+        
         if not content:
             return f"I found information about {entity_name} but couldn't extract details."
         
