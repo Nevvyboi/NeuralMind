@@ -3,15 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GroundZero AI - Neural Intelligence System</title>
+    <title>GroundZero AI</title>
     <link rel="stylesheet" href="/static/styles.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar Navigation -->
+        <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
@@ -31,14 +29,15 @@
                 <button class="nav-item" data-tab="learning">
                     <span class="nav-icon">📚</span>
                     <span class="nav-text">Learning</span>
+                    <span class="learning-indicator hidden" id="learning-indicator"></span>
                 </button>
                 <button class="nav-item" data-tab="knowledge">
                     <span class="nav-icon">🔍</span>
                     <span class="nav-text">Knowledge</span>
                 </button>
-                <button class="nav-item" data-tab="timeline">
+                <button class="nav-item" data-tab="stats">
                     <span class="nav-icon">📊</span>
-                    <span class="nav-text">Timeline</span>
+                    <span class="nav-text">Stats</span>
                 </button>
                 <button class="nav-item" data-tab="settings">
                     <span class="nav-icon">⚙️</span>
@@ -50,255 +49,246 @@
                 <div class="model-status">
                     <div class="status-indicator online"></div>
                     <div class="status-info">
-                        <span class="status-label">Model Status</span>
-                        <span class="status-value" id="model-status-text">Ready</span>
-                    </div>
-                </div>
-                <div class="model-stats" id="sidebar-stats">
-                    <div class="stat">
-                        <span class="stat-value" id="stat-params">-</span>
-                        <span class="stat-label">Parameters</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-value" id="stat-knowledge">-</span>
-                        <span class="stat-label">Knowledge</span>
+                        <span class="status-label">Status</span>
+                        <span class="status-value" id="model-status">Ready</span>
                     </div>
                 </div>
             </div>
         </aside>
         
-        <!-- Main Content Area -->
+        <!-- Main Content -->
         <main class="main-content">
             <!-- Chat Tab -->
             <div class="tab-content active" id="tab-chat">
-                <div class="chat-container" id="chat-container">
+                <div class="chat-container">
                     <div class="chat-header">
-                        <h2>Neural Chat</h2>
-                        <div class="chat-actions">
-                            <button class="btn-icon" id="btn-clear-chat" title="Clear chat">
-                                <span>🗑️</span>
-                            </button>
-                        </div>
+                        <h2>💬 Neural Chat</h2>
+                        <button class="btn-icon" id="btn-clear-chat" title="Clear">🗑️</button>
                     </div>
-                    
                     <div class="chat-messages" id="chat-messages">
                         <div class="message system">
                             <div class="message-content">
-                                <p>👋 Welcome to GroundZero AI! I'm a neural intelligence system built from scratch. Ask me anything!</p>
+                                <p>👋 Hello! I'm GroundZero AI. Ask me anything!</p>
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Voice Recording Status Bar -->
-                    <div class="voice-status-bar hidden" id="voice-status-bar">
-                        <div class="voice-indicator">
-                            <div class="voice-pulse"></div>
-                            <span class="voice-timer" id="voice-timer">0:00</span>
-                        </div>
-                        <div class="voice-message" id="voice-message">Recording...</div>
-                        <button class="voice-cancel-btn" id="voice-cancel">✕ Cancel</button>
-                    </div>
-                    
                     <div class="chat-input-container">
                         <div class="input-wrapper">
-                            <textarea 
-                                id="chat-input" 
-                                placeholder="Type your message..."
-                                rows="1"
-                            ></textarea>
-                            <div class="input-actions">
-                                <button class="btn-voice" id="voice-btn" title="Hold to record">
-                                    🎤
-                                </button>
-                                <button class="btn-send" id="send-btn" title="Send">
-                                    ➤
-                                </button>
-                            </div>
-                        </div>
-                        <div class="input-hint">
-                            Enter to send • Shift+Enter new line • Hold 🎤 for voice
+                            <textarea id="chat-input" placeholder="Type a message..." rows="1"></textarea>
+                            <button class="btn-send" id="send-btn">➤</button>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Learning Tab -->
+            <!-- Learning Tab - COMPREHENSIVE UI -->
             <div class="tab-content" id="tab-learning">
-                <div class="learning-container">
+                <div class="learning-page">
+                    <!-- Header with controls -->
                     <div class="learning-header">
-                        <h2>Learning Dashboard</h2>
-                        <div class="learning-controls">
-                            <button class="btn-primary" id="btn-start-learning">
+                        <div class="header-left">
+                            <h2>📚 Learning Dashboard</h2>
+                            <span class="status-badge" id="learning-status-badge">Idle</span>
+                        </div>
+                        <div class="header-right">
+                            <button class="btn-primary btn-lg" id="btn-start-learning">
                                 ▶️ Start Learning
                             </button>
-                            <button class="btn-secondary hidden" id="btn-stop-learning">
-                                ⏹️ Stop
+                            <button class="btn-danger btn-lg hidden" id="btn-stop-learning">
+                                ⏹️ Stop Learning
                             </button>
                         </div>
                     </div>
                     
-                    <div class="learning-stats-grid">
-                        <div class="stat-card">
+                    <!-- Active Learning Progress (shown when learning) -->
+                    <div class="learning-progress-card hidden" id="learning-progress">
+                        <div class="progress-header">
+                            <div class="progress-title">
+                                <span class="pulse-dot"></span>
+                                <span>Learning in Progress...</span>
+                            </div>
+                            <span class="progress-timer" id="learning-timer">00:00</span>
+                        </div>
+                        <div class="progress-bar-wrapper">
+                            <div class="progress-bar" id="progress-bar"></div>
+                        </div>
+                        <div class="current-item">
+                            <span class="current-label">📖 Currently learning:</span>
+                            <span class="current-value" id="current-article">Initializing...</span>
+                        </div>
+                        <div class="session-stats-row" id="session-stats">
+                            <span>📖 0 articles this session</span>
+                            <span>📝 0 words this session</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats Grid -->
+                    <div class="stats-grid">
+                        <div class="stat-card blue">
                             <div class="stat-icon">📖</div>
-                            <div class="stat-info">
-                                <span class="stat-value" id="learning-articles">0</span>
+                            <div class="stat-content">
+                                <span class="stat-number" id="stat-articles">0</span>
                                 <span class="stat-label">Articles Learned</span>
                             </div>
                         </div>
-                        <div class="stat-card">
+                        <div class="stat-card green">
                             <div class="stat-icon">📝</div>
-                            <div class="stat-info">
-                                <span class="stat-value" id="learning-tokens">0</span>
-                                <span class="stat-label">Tokens Processed</span>
+                            <div class="stat-content">
+                                <span class="stat-number" id="stat-words">0</span>
+                                <span class="stat-label">Words Processed</span>
                             </div>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-icon">🧩</div>
-                            <div class="stat-info">
-                                <span class="stat-value" id="learning-chunks">0</span>
-                                <span class="stat-label">Knowledge Facts</span>
+                        <div class="stat-card orange">
+                            <div class="stat-icon">💡</div>
+                            <div class="stat-content">
+                                <span class="stat-number" id="stat-facts">0</span>
+                                <span class="stat-label">Facts Extracted</span>
                             </div>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-icon">📊</div>
-                            <div class="stat-info">
-                                <span class="stat-value" id="learning-vectors">0</span>
+                        <div class="stat-card purple">
+                            <div class="stat-icon">🔢</div>
+                            <div class="stat-content">
+                                <span class="stat-number" id="stat-vectors">0</span>
                                 <span class="stat-label">Vectors Stored</span>
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Two column layout -->
+                    <div class="learning-columns">
+                        <!-- Recent Articles -->
+                        <div class="learning-panel">
+                            <div class="panel-header">
+                                <h3>📄 Recently Learned</h3>
+                                <button class="btn-sm" id="btn-refresh">🔄</button>
+                            </div>
+                            <div class="panel-content" id="recent-articles">
+                                <div class="empty-state">
+                                    <span class="empty-icon">📚</span>
+                                    <p>No articles learned yet</p>
+                                    <p class="empty-hint">Click "Start Learning" to begin!</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Learning Sessions -->
+                        <div class="learning-panel">
+                            <div class="panel-header">
+                                <h3>📊 Learning Sessions</h3>
+                            </div>
+                            <div class="panel-content" id="learning-sessions">
+                                <div class="empty-state">
+                                    <span class="empty-icon">📈</span>
+                                    <p>No sessions recorded</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Manual Teach Section -->
+                    <div class="teach-section">
+                        <div class="panel-header">
+                            <h3>✏️ Teach Manually</h3>
+                        </div>
+                        <div class="teach-form">
+                            <textarea id="teach-input" placeholder="Enter knowledge to teach the AI (e.g., 'The capital of France is Paris')"></textarea>
+                            <button class="btn-primary" id="btn-teach">💾 Save Knowledge</button>
+                        </div>
+                    </div>
                 </div>
             </div>
             
-            <!-- Knowledge Tab -->
+            <!-- Knowledge Tab - FULL WIDTH -->
             <div class="tab-content" id="tab-knowledge">
-                <div class="knowledge-container">
-                    <div class="knowledge-header">
-                        <h2>Knowledge Explorer</h2>
+                <div class="knowledge-page full-width">
+                    <div class="page-header">
+                        <h2>🔍 Knowledge Explorer</h2>
                     </div>
-                    
-                    <div class="search-section">
-                        <div class="search-input-wrapper">
-                            <input type="text" id="knowledge-search" placeholder="Search knowledge base...">
-                            <button id="search-btn" class="btn-primary">🔍 Search</button>
+                    <div class="search-box">
+                        <input type="text" id="search-input" placeholder="Search your knowledge base...">
+                        <button class="btn-primary" id="btn-search">🔍 Search</button>
+                    </div>
+                    <div class="search-results" id="search-results">
+                        <div class="empty-state">
+                            <span class="empty-icon">🔍</span>
+                            <p>Enter a query to search your knowledge</p>
                         </div>
-                    </div>
-                    
-                    <div class="knowledge-results" id="knowledge-container">
-                        <p class="placeholder-text">Enter a search query to explore</p>
                     </div>
                 </div>
             </div>
             
-            <!-- Timeline Tab -->
-            <div class="tab-content" id="tab-timeline">
-                <div class="timeline-container">
-                    <div class="timeline-header">
-                        <h2>Model Timeline</h2>
+            <!-- Stats Tab - FULL WIDTH -->
+            <div class="tab-content" id="tab-stats">
+                <div class="stats-page full-width">
+                    <div class="page-header">
+                        <h2>📊 System Statistics</h2>
                     </div>
                     
-                    <div class="timeline-summary">
-                        <div class="summary-card">
-                            <div class="summary-icon">🧠</div>
-                            <div class="summary-info">
-                                <span class="summary-label">Model Size</span>
-                                <span class="summary-value" id="timeline-model-size">Medium</span>
-                            </div>
+                    <!-- Big number cards -->
+                    <div class="big-stats">
+                        <div class="big-stat-card">
+                            <span class="big-number" id="big-articles">0</span>
+                            <span class="big-label">Total Articles</span>
                         </div>
-                        <div class="summary-card">
-                            <div class="summary-icon">📈</div>
-                            <div class="summary-info">
-                                <span class="summary-label">Total Events</span>
-                                <span class="summary-value" id="timeline-events">0</span>
-                            </div>
+                        <div class="big-stat-card">
+                            <span class="big-number" id="big-facts">0</span>
+                            <span class="big-label">Knowledge Facts</span>
+                        </div>
+                        <div class="big-stat-card">
+                            <span class="big-number" id="big-vectors">0</span>
+                            <span class="big-label">Vector Embeddings</span>
                         </div>
                     </div>
                     
-                    <div class="timeline-events" id="timeline-events-list">
-                        <p class="placeholder-text">Timeline events will appear here</p>
+                    <!-- Detailed stats table -->
+                    <div class="stats-detail-card">
+                        <h3>📋 Detailed Statistics</h3>
+                        <table class="stats-table">
+                            <tbody id="stats-table-body">
+                                <tr><td>Loading...</td><td>-</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Database info -->
+                    <div class="stats-detail-card">
+                        <h3>💾 Database Status</h3>
+                        <div id="db-status">
+                            <p>Loading database info...</p>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Settings Tab -->
+            <!-- Settings Tab - FULL WIDTH -->
             <div class="tab-content" id="tab-settings">
-                <div class="settings-container">
-                    <div class="settings-header">
-                        <h2>Settings</h2>
+                <div class="settings-page full-width">
+                    <div class="page-header">
+                        <h2>⚙️ Settings</h2>
                     </div>
                     
-                    <!-- Appearance Section with Toggle -->
-                    <div class="settings-section">
+                    <div class="settings-card">
                         <h3>🎨 Appearance</h3>
-                        <div class="setting-item">
+                        <div class="setting-row">
                             <div class="setting-info">
-                                <label>Dark Mode</label>
-                                <p class="setting-description">Toggle between dark and light theme</p>
+                                <span class="setting-name">Dark Mode</span>
+                                <span class="setting-desc">Toggle dark/light theme</span>
                             </div>
-                            <div class="setting-control">
-                                <label class="toggle">
-                                    <input type="checkbox" id="theme-toggle" checked>
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="theme-toggle" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
                         </div>
                     </div>
                     
-                    <div class="settings-section">
-                        <h3>🧠 Model Configuration</h3>
-                        <div class="setting-item">
-                            <div class="setting-info">
-                                <label>Model Size</label>
-                                <p class="setting-description">Larger = more capacity, slower</p>
-                            </div>
-                            <div class="setting-control">
-                                <select id="model-size-select">
-                                    <option value="nano">Nano (~1M)</option>
-                                    <option value="tiny">Tiny (~10M)</option>
-                                    <option value="small">Small (~50M)</option>
-                                    <option value="medium" selected>Medium (~150M)</option>
-                                    <option value="large">Large (~350M)</option>
-                                </select>
-                            </div>
-                        </div>
-                        <button class="btn-primary" id="btn-apply-model">Apply Changes</button>
-                    </div>
-                    
-                    <div class="settings-section">
-                        <h3>🎤 Voice Settings</h3>
-                        <div class="setting-item">
-                            <div class="setting-info">
-                                <label>Whisper Model</label>
-                                <p class="setting-description">Transcription accuracy vs speed</p>
-                            </div>
-                            <div class="setting-control">
-                                <select id="voice-model-select">
-                                    <option value="tiny">Tiny (fastest)</option>
-                                    <option value="base" selected>Base (balanced)</option>
-                                    <option value="small">Small (accurate)</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="settings-section">
-                        <h3>💾 Storage</h3>
-                        <div class="storage-actions">
-                            <button class="btn-secondary" id="btn-save-now">💾 Save Now</button>
-                            <button class="btn-secondary" id="btn-export-model">📦 Export</button>
-                        </div>
-                    </div>
-                    
-                    <div class="settings-section danger-zone">
+                    <div class="settings-card danger">
                         <h3>⚠️ Danger Zone</h3>
-                        <div class="setting-item">
+                        <div class="setting-row">
                             <div class="setting-info">
-                                <label>Reset Model</label>
-                                <p class="setting-description">Clear all learned knowledge</p>
+                                <span class="setting-name">Clear Chat History</span>
+                                <span class="setting-desc">Remove all chat messages</span>
                             </div>
-                            <div class="setting-control">
-                                <button class="btn-danger" id="btn-reset-model">Reset</button>
-                            </div>
+                            <button class="btn-danger-sm" id="btn-clear-all">Clear</button>
                         </div>
                     </div>
                 </div>
@@ -306,9 +296,7 @@
         </main>
     </div>
     
-    <!-- Toast Notifications -->
     <div class="toast-container" id="toast-container"></div>
-    
     <script src="/static/app.js"></script>
 </body>
 </html>

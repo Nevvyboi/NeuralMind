@@ -1,80 +1,49 @@
 """
-GroundZero API Routes v2.1
-==========================
-All API endpoints that connect to loaded components.
-Includes voice transcription with file upload support.
+GroundZero API Routes v2.7
+Enhanced Learning Dashboard with real-time stats
 """
 
-from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect, File, UploadFile, Form
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from pathlib import Path
 import asyncio
-import tempfile
-import os
+import sqlite3
+from datetime import datetime
 
 router = APIRouter()
 
 
 # ============================================================
-# GET COMPONENTS - Access from server.py
+# HELPERS
 # ============================================================
 
 def get_components():
-    """Get components from server module"""
     try:
         from . import server
         return getattr(server, '_components', {})
     except:
         return {}
 
-
-def get_settings():
-    """Get settings"""
+def get_data_dir() -> Path:
     try:
         from config import Settings
-        return Settings()
+        return Path(Settings().data_dir)
     except:
-        try:
-            from config.settings import Settings
-            return Settings()
-        except:
-            return None
-
-
-def get_transcriber():
-    """Get voice transcriber"""
-    try:
-        from . import server
-        return getattr(server, '_transcriber', None)
-    except:
-        return None
+        return Path("./data")
 
 
 # ============================================================
-# REQUEST/RESPONSE MODELS
+# MODELS
 # ============================================================
 
 class ChatMessage(BaseModel):
     message: str
-    use_knowledge: bool = True
-    use_neural: bool = True
-    stream: bool = False
-
 
 class ChatResponse(BaseModel):
     response: str
-    sources: List[str] = []
     confidence: float = 0.0
-    tokens_used: int = 0
-
-
-class LearnRequest(BaseModel):
-    url: Optional[str] = None
-    text: Optional[str] = None
-    title: Optional[str] = None
-
 
 class TeachRequest(BaseModel):
     knowledge: str
@@ -82,202 +51,324 @@ class TeachRequest(BaseModel):
 
 
 # ============================================================
-# STATS ENDPOINTS - These power the frontend dashboard
+# SEARCH FUNCTIONS
+# ============================================================
+
+def search_vectors_db(query: str, limit: int = 10) -> List[Dict]:
+    results = []
+    db_path = get_data_dir() / "vectors.db"
+    if not db_path.exists():
+        return results
+    
+    words = query.lower().split()[:5]
+    try:
+        conn = sqlite3.connect(str(db_path))
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        where = ' OR '.join(["LOWER(content) LIKE ?" for _ in words])
+        params = [f"%{w}%" for w in words] + [limit]
+        
+        cursor.execute(f"SELECT content, source_title FROM vectors WHERE {where} LIMIT ?", params)
+        for row in cursor.fetchall():
+            if row['content'] and len(row['content']) > 20:
+                results.append({"type": "knowledge", "content": row['content'][:450], "source": "learned"})
+        conn.close()
+    except Exception as e:
+        print(f"Search error: {e}")
+    return results
+
+
+def search_knowledge_graph(query: str, limit: int = 20) -> List[Dict]:
+    results = []
+    db_path = get_data_dir() / "knowledge_graph.db"
+    if not db_path.exists():
+        return results
+    
+    words = query.lower().split()[:5]
+    try:
+        conn = sqlite3.connect(str(db_path))
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Facts
+        where = ' OR '.join(["(LOWER(subject) LIKE ? OR LOWER(object) LIKE ?)" for _ in words])
+        params = []
+        for w in words:
+            params.extend([f"%{w}%", f"%{w}%"])
+        params.append(limit)
+        
+        cursor.execute(f"SELECT subject, relation, object FROM facts WHERE {where} LIMIT ?", params)
+        for row in cursor.fetchall():
+            results.append({"type": "fact", "content": f"{row['subject']} → {row['relation']} → {row['object']}", "source": "graph"})
+        
+        # Definitions
+        where = ' OR '.join(["(LOWER(term) LIKE ? OR LOWER(definition) LIKE ?)" for _ in words])
+        params = []
+        for w in words:
+            params.extend([f"%{w}%", f"%{w}%"])
+        params.append(limit)
+        
+        cursor.execute(f"SELECT term, definition FROM definitions WHERE {where} LIMIT ?", params)
+        for row in cursor.fetchall():
+            if row['term'] and row['definition']:
+                results.append({"type": "definition", "content": f"📖 {row['term']}: {row['definition'][:300]}", "source": "definitions"})
+        
+        conn.close()
+    except Exception as e:
+        print(f"KG search error: {e}")
+    return results
+
+
+# ============================================================
+# COMPREHENSIVE STATS ENDPOINT
 # ============================================================
 
 @router.get("/api/stats")
 async def get_stats():
-    """Get system statistics - powers the frontend Model Stats panel"""
+    data_dir = get_data_dir()
     components = get_components()
     
-    # Vector store stats
-    vector_count = 0
-    if components.get('vector_store'):
-        try:
-            vs = components['vector_store']
-            if hasattr(vs, 'get_stats'):
-                vs_stats = vs.get_stats()
-                vector_count = vs_stats.get('total_vectors', vs_stats.get('faiss_vectors', 0))
-            elif hasattr(vs, 'count'):
-                vector_count = vs.count
-            elif hasattr(vs, 'ntotal'):
-                vector_count = vs.ntotal
-        except:
-            pass
+    stats = {
+        "vectors": 0,
+        "facts": 0,
+        "definitions": 0,
+        "articles_learned": 0,
+        "tokens_trained": 0,
+        "vocabulary": 0,
+        "params": 0
+    }
     
-    if vector_count == 0 and components.get('faiss_index'):
-        try:
-            vector_count = components['faiss_index'].ntotal
-        except:
-            pass
+    # Vectors
+    try:
+        conn = sqlite3.connect(str(data_dir / "vectors.db"))
+        stats["vectors"] = conn.execute("SELECT COUNT(*) FROM vectors").fetchone()[0]
+        conn.close()
+    except: pass
     
-    # Knowledge graph stats
-    facts_count = 0
-    entities_count = 0
-    if components.get('graph_reasoner'):
-        try:
-            gr = components['graph_reasoner']
-            if hasattr(gr, 'get_stats'):
-                gr_stats = gr.get_stats()
-                facts_count = gr_stats.get('total_facts', 0)
-                entities_count = gr_stats.get('unique_subjects', gr_stats.get('total_entities', 0))
-        except:
-            pass
+    # Knowledge Graph
+    try:
+        conn = sqlite3.connect(str(data_dir / "knowledge_graph.db"))
+        stats["facts"] = conn.execute("SELECT COUNT(*) FROM facts").fetchone()[0]
+        stats["definitions"] = conn.execute("SELECT COUNT(*) FROM definitions").fetchone()[0]
+        conn.close()
+    except: pass
     
-    # Learning engine stats
-    articles_learned = 0
-    tokens_trained = 0
-    sources_count = 0
-    if components.get('learner'):
-        try:
-            le = components['learner']
-            if hasattr(le, 'get_stats'):
-                le_stats = le.get_stats()
-                articles_learned = le_stats.get('total_articles_learned', le_stats.get('total_articles', 0))
-                tokens_trained = le_stats.get('total_tokens_trained', le_stats.get('total_tokens', 0))
-                sources_count = le_stats.get('total_sources', articles_learned)
-        except:
-            pass
+    # Knowledge.db
+    try:
+        conn = sqlite3.connect(str(data_dir / "knowledge.db"))
+        stats["articles_learned"] = conn.execute("SELECT COUNT(*) FROM sources").fetchone()[0]
+        row = conn.execute("SELECT total_words FROM stats LIMIT 1").fetchone()
+        if row:
+            stats["tokens_trained"] = row[0]
+        vocab = conn.execute("SELECT COUNT(*) FROM vocabulary").fetchone()
+        if vocab:
+            stats["vocabulary"] = vocab[0]
+        conn.close()
+    except: pass
     
-    # Neural network stats
-    vocab_size = 0
-    words_learned = 0
-    params = 0
-    model_size = 'unknown'
+    # Neural params
     if components.get('neural_brain'):
         try:
-            nb = components['neural_brain']
-            if hasattr(nb, 'get_stats'):
-                nb_stats = nb.get_stats()
-                vocab_size = nb_stats.get('vocab_size', 0)
-                words_learned = nb_stats.get('total_tokens_trained', tokens_trained)
-                params = nb_stats.get('model_params', 0)
-                model_size = nb_stats.get('model_size', 'medium')
-        except:
-            pass
+            nb_stats = components['neural_brain'].get_stats()
+            stats["params"] = nb_stats.get('model_params', 0)
+        except: pass
     
-    return {
-        "vocabulary": vocab_size,
-        "words": words_learned,
-        "knowledge": facts_count,
-        "sources": sources_count,
-        "sessions": 0,
-        "vectors": vector_count,
-        "articles_learned": articles_learned,
-        "tokens_trained": tokens_trained,
-        "entities": entities_count,
-        "facts": facts_count,
-        "params": params,
-        "neural": {
-            "parameters": params,
-            "vocab_size": vocab_size,
-            "total_tokens_trained": tokens_trained,
-            "model_size": model_size
-        },
-        "learning": {
-            "total_articles_learned": articles_learned,
-            "total_tokens": tokens_trained
-        }
-    }
+    stats["knowledge"] = stats["facts"] + stats["definitions"]
+    return stats
 
 
-@router.get("/api/stats/detailed")
-async def get_stats_detailed():
-    """Get detailed system statistics"""
-    return await get_stats()
-
-
-@router.get("/api/status")
-async def get_status():
-    """Get component status"""
-    components = get_components()
-    
-    return {
-        "status": "ready",
-        "components": {
-            "vector_store": components.get('vector_store') is not None or components.get('faiss_index') is not None,
-            "knowledge_base": components.get('kb') is not None,
-            "knowledge_graph": components.get('graph_reasoner') is not None,
-            "neural_brain": components.get('neural_brain') is not None,
-            "learning_engine": components.get('learner') is not None,
-            "response_generator": components.get('response_generator') is not None,
-            "context_brain": components.get('context_brain') is not None,
-            "strategic_planner": components.get('strategic_planner') is not None
-        }
-    }
-
-
-@router.get("/api/neural/stats")
-async def get_neural_stats():
-    """Get neural network statistics"""
-    components = get_components()
-    neural_brain = components.get('neural_brain')
-    
-    if not neural_brain:
-        return {"status": "not_loaded", "params": 0, "vocab_size": 0}
-    
-    try:
-        if hasattr(neural_brain, 'get_stats'):
-            stats = neural_brain.get_stats()
-            return {
-                "status": "ready",
-                "params": stats.get('model_params', 0),
-                "vocab_size": stats.get('vocab_size', 0),
-                "tokens_trained": stats.get('total_tokens_trained', 0),
-                "model_size": stats.get('model_size', 'unknown'),
-                "device": stats.get('device', 'cpu')
-            }
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
-
-
-@router.get("/api/knowledge/stats")  
-async def get_knowledge_stats():
-    """Get knowledge graph statistics"""
-    components = get_components()
-    graph = components.get('graph_reasoner')
-    
-    if not graph:
-        return {"status": "not_loaded", "facts": 0, "entities": 0}
-    
-    try:
-        if hasattr(graph, 'get_stats'):
-            stats = graph.get_stats()
-            return {
-                "status": "ready",
-                "facts": stats.get('total_facts', 0),
-                "entities": stats.get('unique_subjects', 0),
-                "relations": len(stats.get('facts_by_relation', {}))
-            }
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
-
+# ============================================================
+# LEARNING STATS - DETAILED REAL-TIME INFO
+# ============================================================
 
 @router.get("/api/learning/stats")
 async def get_learning_stats():
-    """Get learning engine statistics"""
+    """Get detailed learning engine statistics including current article"""
+    components = get_components()
+    learner = components.get('learner')
+    data_dir = get_data_dir()
+    
+    result = {
+        "is_running": False,
+        "current_article": None,
+        "current_url": None,
+        "articles_this_session": 0,
+        "words_this_session": 0,
+        "articles_learned": 0,
+        "tokens_trained": 0,
+        "facts": 0,
+        "vectors": 0,
+        "start_time": None,
+        "elapsed_seconds": 0
+    }
+    
+    if learner:
+        result["is_running"] = getattr(learner, 'is_running', False)
+        result["current_article"] = getattr(learner, 'current_article', None)
+        result["current_url"] = getattr(learner, 'current_url', None)
+        result["articles_this_session"] = getattr(learner, 'articles_this_session', 0)
+        result["words_this_session"] = getattr(learner, 'words_this_session', 0)
+        
+        # Get start time if running
+        start_time = getattr(learner, 'start_time', None)
+        if start_time and result["is_running"]:
+            result["start_time"] = start_time.isoformat() if hasattr(start_time, 'isoformat') else str(start_time)
+            try:
+                from datetime import datetime
+                if isinstance(start_time, datetime):
+                    result["elapsed_seconds"] = int((datetime.now() - start_time).total_seconds())
+            except: pass
+        
+        # Get stats from learner if available
+        if hasattr(learner, 'get_stats'):
+            try:
+                lstats = learner.get_stats()
+                result["articles_this_session"] = lstats.get('articles_this_session', result["articles_this_session"])
+                result["words_this_session"] = lstats.get('words_this_session', result["words_this_session"])
+            except: pass
+    
+    # Get totals from database
+    try:
+        conn = sqlite3.connect(str(data_dir / "knowledge.db"))
+        result["articles_learned"] = conn.execute("SELECT COUNT(*) FROM sources").fetchone()[0]
+        row = conn.execute("SELECT total_words FROM stats LIMIT 1").fetchone()
+        if row:
+            result["tokens_trained"] = row[0]
+        conn.close()
+    except: pass
+    
+    try:
+        conn = sqlite3.connect(str(data_dir / "knowledge_graph.db"))
+        result["facts"] = conn.execute("SELECT COUNT(*) FROM facts").fetchone()[0]
+        conn.close()
+    except: pass
+    
+    try:
+        conn = sqlite3.connect(str(data_dir / "vectors.db"))
+        result["vectors"] = conn.execute("SELECT COUNT(*) FROM vectors").fetchone()[0]
+        conn.close()
+    except: pass
+    
+    return result
+
+
+@router.get("/api/learning/recent")
+async def get_recent_articles(limit: int = 10):
+    data_dir = get_data_dir()
+    articles = []
+    
+    try:
+        conn = sqlite3.connect(str(data_dir / "knowledge.db"))
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT title, url, word_count, learned_at FROM sources ORDER BY learned_at DESC LIMIT ?", (limit,))
+        for row in cursor.fetchall():
+            articles.append({
+                "title": row['title'] or 'Untitled',
+                "url": row['url'],
+                "word_count": row['word_count'] or 0,
+                "learned_at": row['learned_at']
+            })
+        conn.close()
+    except Exception as e:
+        print(f"Recent articles error: {e}")
+    
+    return {"articles": articles}
+
+
+@router.get("/api/learning/sessions")
+async def get_learning_sessions(limit: int = 10):
+    data_dir = get_data_dir()
+    sessions = []
+    
+    try:
+        conn = sqlite3.connect(str(data_dir / "knowledge.db"))
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT started_at, ended_at, duration_seconds, articles_learned, words_learned, status
+            FROM learning_sessions ORDER BY started_at DESC LIMIT ?
+        """, (limit,))
+        
+        for row in cursor.fetchall():
+            sessions.append({
+                "started_at": row['started_at'],
+                "ended_at": row['ended_at'],
+                "duration_seconds": row['duration_seconds'] or 0,
+                "articles_learned": row['articles_learned'] or 0,
+                "words_learned": row['words_learned'] or 0,
+                "status": row['status'] or 'completed'
+            })
+        conn.close()
+    except Exception as e:
+        print(f"Sessions error: {e}")
+    
+    return {"sessions": sessions}
+
+
+@router.post("/api/learning/start")
+async def start_learning():
     components = get_components()
     learner = components.get('learner')
     
     if not learner:
-        return {"status": "not_loaded", "articles": 0, "tokens": 0, "is_running": False}
+        raise HTTPException(status_code=503, detail="Learning engine not available")
     
     try:
-        if hasattr(learner, 'get_stats'):
-            stats = learner.get_stats()
-            return {
-                "status": "ready",
-                "articles_learned": stats.get('total_articles_learned', 0),
-                "tokens_trained": stats.get('total_tokens_trained', 0),
-                "is_running": stats.get('is_running', getattr(learner, 'is_running', False)),
-                "current_article": stats.get('current_article', None)
-            }
-        return {
-            "status": "ready",
-            "is_running": getattr(learner, 'is_running', False)
-        }
+        # Reset session counters
+        if hasattr(learner, 'articles_this_session'):
+            learner.articles_this_session = 0
+        if hasattr(learner, 'words_this_session'):
+            learner.words_this_session = 0
+        if hasattr(learner, 'start_time'):
+            learner.start_time = datetime.now()
+        
+        if hasattr(learner, 'start'):
+            await asyncio.to_thread(learner.start)
+        elif hasattr(learner, 'start_learning'):
+            await asyncio.to_thread(learner.start_learning)
+        return {"status": "started"}
     except Exception as e:
-        return {"status": "error", "error": str(e), "is_running": False}
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/learning/stop")
+async def stop_learning():
+    components = get_components()
+    learner = components.get('learner')
+    
+    if learner and hasattr(learner, 'stop'):
+        learner.stop()
+    return {"status": "stopped"}
+
+
+@router.post("/api/teach")
+async def teach(request: TeachRequest):
+    components = get_components()
+    learner = components.get('learner')
+    graph = components.get('graph_reasoner')
+    
+    if not request.knowledge:
+        raise HTTPException(status_code=400, detail="Knowledge required")
+    
+    added = []
+    
+    if graph and hasattr(graph, 'add_fact'):
+        try:
+            graph.add_fact("user_knowledge", "contains", request.knowledge[:200])
+            added.append("graph")
+        except: pass
+    
+    if learner and hasattr(learner, 'learn_text'):
+        try:
+            learner.learn_text(request.knowledge, source=request.source)
+            added.append("learner")
+        except: pass
+    
+    return {"status": "success", "added": added}
 
 
 # ============================================================
@@ -286,584 +377,91 @@ async def get_learning_stats():
 
 @router.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatMessage):
-    """Chat with the AI"""
     components = get_components()
     response_gen = components.get('response_generator')
     neural_brain = components.get('neural_brain')
-    kb = components.get('kb')
-    graph = components.get('graph_reasoner')
-    
     query = request.message
     
-    def is_good_response(text):
-        """Check if response is usable (not garbage)"""
+    def is_good(text):
         if not text or len(text) < 5:
             return False
-        # Check for too many unknown tokens
-        if text.count('<|unk|>') > 3 or text.count('<unk>') > 3:
-            return False
-        # Check for repetitive garbage
-        if text.count('|>') > 10:
+        if text.count('<|unk|>') > 3:
             return False
         return True
     
-    # Try response generator first
+    # Try response generator
     if response_gen and hasattr(response_gen, 'generate'):
         try:
             result = await asyncio.to_thread(response_gen.generate, query)
-            
-            if isinstance(result, dict):
-                text = result.get('response', result.get('text', ''))
-            else:
-                text = str(result) if result else ''
-            
-            if is_good_response(text):
-                return ChatResponse(
-                    response=text,
-                    sources=result.get('sources', []) if isinstance(result, dict) else [],
-                    confidence=0.8
-                )
-        except Exception as e:
-            print(f"ResponseGenerator error: {e}")
+            text = result.get('response', '') if isinstance(result, dict) else str(result)
+            if is_good(text):
+                return ChatResponse(response=text, confidence=0.8)
+        except: pass
     
-    # Fallback: Try neural brain directly
+    # Try neural
     if neural_brain and hasattr(neural_brain, 'generate'):
         try:
             result = await asyncio.to_thread(neural_brain.generate, query, max_tokens=100)
             text = str(result) if result else ''
-            
-            if is_good_response(text):
+            if is_good(text):
                 return ChatResponse(response=text, confidence=0.6)
-        except Exception as e:
-            print(f"NeuralBrain error: {e}")
+        except: pass
     
-    # Fallback: Search knowledge graph
-    if graph and hasattr(graph, 'query'):
-        try:
-            results = await asyncio.to_thread(graph.query, query)
-            if results and len(results) > 0:
-                facts = []
-                for fact in results[:5]:
-                    if isinstance(fact, tuple) and len(fact) >= 3:
-                        facts.append(f"• {fact[0]} {fact[1]} {fact[2]}")
-                    elif isinstance(fact, dict):
-                        facts.append(f"• {fact.get('subject', '')} {fact.get('relation', '')} {fact.get('object', '')}")
-                    else:
-                        facts.append(f"• {str(fact)}")
-                
-                if facts:
-                    response = f"Here's what I know about that:\n\n" + "\n".join(facts)
-                    return ChatResponse(response=response, confidence=0.5)
-        except Exception as e:
-            print(f"GraphReasoner error: {e}")
+    # Search knowledge
+    defs = search_knowledge_graph(query, limit=3)
+    definitions = [d for d in defs if d['type'] == 'definition']
+    if definitions:
+        return ChatResponse(response=definitions[0]['content'], confidence=0.7)
     
-    # Fallback: Search knowledge base
-    if kb and hasattr(kb, 'search'):
-        try:
-            # Try different search signatures
-            results = None
-            for search_call in [
-                lambda: kb.search(query, k=5),
-                lambda: kb.search(query, limit=5),
-                lambda: kb.search(query, n=5),
-                lambda: kb.search(query),
-            ]:
-                try:
-                    results = await asyncio.to_thread(search_call)
-                    break
-                except TypeError:
-                    continue
-            
-            if results and len(results) > 0:
-                response_text = f"Based on my knowledge:\n\n"
-                for i, r in enumerate(results[:3], 1):
-                    if isinstance(r, dict):
-                        content = r.get('content', r.get('text', str(r)))[:150]
-                    else:
-                        content = str(r)[:150]
-                    response_text += f"{i}. {content}...\n\n"
-                return ChatResponse(response=response_text, confidence=0.4)
-        except Exception as e:
-            print(f"KnowledgeBase error: {e}")
+    facts = [d for d in defs if d['type'] == 'fact']
+    if facts:
+        return ChatResponse(response="Here's what I know:\n• " + "\n• ".join(f['content'] for f in facts[:5]), confidence=0.5)
     
-    # Final fallback - simple responses
-    query_lower = query.lower()
-    if any(w in query_lower for w in ['hello', 'hi', 'hey']):
-        return ChatResponse(response="Hello! I'm GroundZero AI. How can I help you today?", confidence=0.9)
-    elif any(w in query_lower for w in ['how are you', 'how do you do']):
-        return ChatResponse(response="I'm doing well, thank you for asking! I'm here to help answer your questions.", confidence=0.9)
-    elif any(w in query_lower for w in ['what can you do', 'help', 'capabilities']):
-        return ChatResponse(response="I can answer questions based on my learned knowledge, help with general queries, and learn from new information. Try asking me about topics I've learned!", confidence=0.9)
-    elif any(w in query_lower for w in ['thank', 'thanks']):
-        return ChatResponse(response="You're welcome! Let me know if you have any other questions.", confidence=0.9)
-    else:
-        return ChatResponse(
-            response=f"I'm still learning about '{query}'. My neural network is training - the more I learn, the better my responses will be! You can teach me by going to the Learning tab.",
-            confidence=0.2
-        )
-
-
-@router.post("/api/ask")
-async def ask(request: ChatMessage):
-    """Alternative chat endpoint"""
-    return await chat(request)
+    content = search_vectors_db(query, limit=2)
+    if content:
+        return ChatResponse(response=content[0]['content'][:500], confidence=0.4)
+    
+    # Fallbacks
+    q = query.lower()
+    if any(w in q for w in ['hello', 'hi', 'hey']):
+        return ChatResponse(response="Hello! I'm GroundZero AI. Ask me anything!", confidence=0.9)
+    
+    return ChatResponse(response=f"I couldn't find info about '{query}'. Try the Knowledge tab!", confidence=0.2)
 
 
 # ============================================================
-# LEARNING ENDPOINTS
-# ============================================================
-
-@router.post("/api/learn")
-async def learn_from_url(request: LearnRequest):
-    """Learn from a URL"""
-    components = get_components()
-    learner = components.get('learner')
-    
-    if not learner:
-        raise HTTPException(status_code=503, detail="Learning engine not available")
-    
-    if not request.url:
-        raise HTTPException(status_code=400, detail="URL required")
-    
-    try:
-        if hasattr(learner, 'learn_from_url'):
-            result = await asyncio.to_thread(learner.learn_from_url, request.url)
-            return {"status": "success", "result": result}
-        else:
-            raise HTTPException(status_code=501, detail="learn_from_url not implemented")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/api/teach")
-async def teach(request: TeachRequest):
-    """Teach the AI new knowledge"""
-    components = get_components()
-    learner = components.get('learner')
-    graph = components.get('graph_reasoner')
-    
-    if not request.knowledge:
-        raise HTTPException(status_code=400, detail="Knowledge text required")
-    
-    result = {"status": "success", "added": []}
-    
-    if graph and hasattr(graph, 'add_fact'):
-        try:
-            graph.add_fact("user_knowledge", "contains", request.knowledge[:200])
-            result["added"].append("knowledge_graph")
-        except:
-            pass
-    
-    if learner and hasattr(learner, 'learn_text'):
-        try:
-            learner.learn_text(request.knowledge, source=request.source)
-            result["added"].append("learning_engine")
-        except:
-            pass
-    
-    return result
-
-
-@router.post("/api/learning/start")
-async def start_learning():
-    """Start the learning engine"""
-    components = get_components()
-    learner = components.get('learner')
-    
-    if not learner:
-        raise HTTPException(status_code=503, detail="Learning engine not available")
-    
-    try:
-        if hasattr(learner, 'start'):
-            await asyncio.to_thread(learner.start)
-            return {"status": "started"}
-        elif hasattr(learner, 'start_learning'):
-            await asyncio.to_thread(learner.start_learning)
-            return {"status": "started"}
-        else:
-            return {"status": "no_start_method"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/api/learning/stop")
-async def stop_learning():
-    """Stop the learning engine"""
-    components = get_components()
-    learner = components.get('learner')
-    
-    if not learner:
-        raise HTTPException(status_code=503, detail="Learning engine not available")
-    
-    try:
-        if hasattr(learner, 'stop'):
-            learner.stop()
-            return {"status": "stopped"}
-        elif hasattr(learner, 'stop_learning'):
-            learner.stop_learning()
-            return {"status": "stopped"}
-        else:
-            return {"status": "no_stop_method"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# ============================================================
-# SEARCH ENDPOINTS
+# SEARCH ENDPOINT
 # ============================================================
 
 @router.get("/api/search")
-async def search(q: str = Query(..., description="Search query"), k: int = 10):
-    """Search the knowledge base"""
-    components = get_components()
+async def search(q: str = Query(...), k: int = 10):
     results = []
+    results.extend(search_vectors_db(q, limit=k))
+    results.extend(search_knowledge_graph(q, limit=k))
     
-    # Search knowledge base first (has actual content)
-    kb = components.get('kb')
-    if kb:
-        try:
-            kb_results = None
-            # Try different search methods
-            for method in ['search', 'query', 'find']:
-                if hasattr(kb, method):
-                    func = getattr(kb, method)
-                    # Try different argument styles
-                    for call in [
-                        lambda: func(q, k=k),
-                        lambda: func(q, limit=k),
-                        lambda: func(q, n=k),
-                        lambda: func(q),
-                        lambda: func(query=q, k=k),
-                    ]:
-                        try:
-                            kb_results = call()
-                            break
-                        except TypeError:
-                            continue
-                    if kb_results:
-                        break
-            
-            if kb_results:
-                for item in kb_results[:k]:
-                    content = ""
-                    if isinstance(item, dict):
-                        content = item.get('content') or item.get('text') or item.get('chunk') or str(item)
-                    elif isinstance(item, tuple):
-                        content = str(item[0]) if item else str(item)
-                    elif hasattr(item, 'content'):
-                        content = item.content
-                    elif hasattr(item, 'text'):
-                        content = item.text
-                    else:
-                        content = str(item)
-                    
-                    if content and len(content) > 10:
-                        results.append({
-                            "type": "knowledge",
-                            "content": content[:500],
-                            "source": "knowledge_base"
-                        })
-        except Exception as e:
-            print(f"KB search error: {e}")
-    
-    # Search knowledge graph for facts
-    graph = components.get('graph_reasoner')
-    if graph and hasattr(graph, 'query'):
-        try:
-            graph_results = graph.query(q)
-            for fact in (graph_results or [])[:k]:
-                if isinstance(fact, tuple) and len(fact) >= 3:
-                    content = f"{fact[0]} → {fact[1]} → {fact[2]}"
-                elif isinstance(fact, dict):
-                    content = f"{fact.get('subject', '')} → {fact.get('relation', '')} → {fact.get('object', '')}"
-                else:
-                    content = str(fact)
-                
-                if content and len(content) > 5:
-                    results.append({
-                        "type": "fact",
-                        "content": content,
-                        "source": "knowledge_graph"
-                    })
-        except Exception as e:
-            print(f"Graph search error: {e}")
-    
-    # Search vector store with content retrieval
-    vector_store = components.get('vector_store')
-    if vector_store and hasattr(vector_store, 'search'):
-        try:
-            # Get embedding function
-            embed_func = None
-            try:
-                from storage.vector_store import simple_embed
-                embed_func = lambda t: simple_embed(t, dim=256)
-            except:
-                try:
-                    from core.embeddings import get_embedding
-                    embed_func = get_embedding
-                except:
-                    pass
-            
-            if embed_func:
-                query_vec = embed_func(q)
-                vec_results = vector_store.search(query_vec, k=k)
-                
-                for r in vec_results:
-                    content = ""
-                    # Try to get actual content from metadata
-                    if hasattr(r, 'metadata') and r.metadata:
-                        meta = r.metadata
-                        if isinstance(meta, dict):
-                            content = meta.get('content') or meta.get('text') or meta.get('chunk') or meta.get('content_preview', '')
-                        elif hasattr(meta, 'content'):
-                            content = meta.content
-                        elif hasattr(meta, 'text'):
-                            content = meta.text
-                    
-                    # If no content in metadata, try to retrieve from KB by ID
-                    if not content and kb and hasattr(kb, 'get'):
-                        try:
-                            item = kb.get(r.id)
-                            if item:
-                                if isinstance(item, dict):
-                                    content = item.get('content') or item.get('text') or ''
-                                else:
-                                    content = str(item)
-                        except:
-                            pass
-                    
-                    if content and len(content) > 10:
-                        results.append({
-                            "type": "vector",
-                            "content": content[:500],
-                            "score": round(1 - (r.distance if hasattr(r, 'distance') else 0), 3),
-                            "source": "vector_store"
-                        })
-                    elif r.id:
-                        # Just show ID if we can't get content
-                        results.append({
-                            "type": "vector_id",
-                            "content": f"Vector ID: {r.id}",
-                            "source": "vector_store"
-                        })
-        except Exception as e:
-            print(f"Vector search error: {e}")
-    
-    # Deduplicate results by content
+    # Dedupe
     seen = set()
-    unique_results = []
+    unique = []
     for r in results:
-        content_key = r.get('content', '')[:100]
-        if content_key not in seen:
-            seen.add(content_key)
-            unique_results.append(r)
+        key = r['content'][:80].lower()
+        if key not in seen:
+            seen.add(key)
+            unique.append(r)
     
-    return {"query": q, "results": unique_results[:k], "total": len(unique_results)}
-
-
-@router.post("/api/search")
-async def search_post(query: str, k: int = 10):
-    """Search via POST"""
-    return await search(q=query, k=k)
+    return {"query": q, "results": unique[:k], "total": len(unique)}
 
 
 # ============================================================
-# TIMELINE ENDPOINT
-# ============================================================
-
-@router.get("/api/timeline")
-async def get_timeline(limit: int = 50):
-    """Get model timeline events"""
-    components = get_components()
-    neural_brain = components.get('neural_brain')
-    
-    events = []
-    
-    if neural_brain and hasattr(neural_brain, 'get_timeline'):
-        try:
-            timeline = neural_brain.get_timeline()
-            events = timeline[:limit] if timeline else []
-        except:
-            pass
-    
-    return {"events": events, "total": len(events)}
-
-
-# ============================================================
-# VOICE ENDPOINTS  
-# ============================================================
-
-@router.post("/api/voice/transcribe")
-async def transcribe_voice(audio: UploadFile = File(...)):
-    """Transcribe uploaded audio file"""
-    transcriber = get_transcriber()
-    
-    if not transcriber:
-        return {"error": "Voice transcription not available. Install whisper: pip install openai-whisper", "text": ""}
-    
-    try:
-        # Save uploaded file temporarily
-        content = await audio.read()
-        
-        if len(content) < 1000:
-            return {"error": "Audio too short", "text": ""}
-        
-        # Determine file extension from content type
-        ext = '.webm'
-        if audio.content_type:
-            if 'ogg' in audio.content_type:
-                ext = '.ogg'
-            elif 'wav' in audio.content_type:
-                ext = '.wav'
-            elif 'mp3' in audio.content_type:
-                ext = '.mp3'
-        
-        with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
-            tmp.write(content)
-            tmp_path = tmp.name
-        
-        try:
-            # Transcribe using whisper
-            if hasattr(transcriber, 'transcribe'):
-                result = await asyncio.to_thread(transcriber.transcribe, tmp_path)
-                
-                if isinstance(result, dict):
-                    text = result.get('text', '')
-                    # Clean up the text
-                    text = text.strip()
-                    return {
-                        "text": text,
-                        "language": result.get('language', 'en'),
-                        "success": True
-                    }
-                else:
-                    return {"text": str(result).strip(), "success": True}
-            else:
-                return {"error": "Transcriber has no transcribe method", "text": ""}
-        finally:
-            # Clean up temp file
-            try:
-                os.unlink(tmp_path)
-            except:
-                pass
-            
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return {"error": str(e), "text": "", "success": False}
-
-
-@router.websocket("/ws/voice")
-async def voice_websocket(websocket: WebSocket):
-    """WebSocket for streaming voice transcription"""
-    await websocket.accept()
-    
-    transcriber = get_transcriber()
-    
-    if not transcriber:
-        await websocket.send_json({"error": "Voice transcription not available"})
-        await websocket.close()
-        return
-    
-    await websocket.send_json({"status": "ready", "message": "Send audio data"})
-    
-    audio_buffer = bytearray()
-    
-    try:
-        while True:
-            data = await websocket.receive_bytes()
-            audio_buffer.extend(data)
-            
-            # Process when we have enough data (about 2 seconds)
-            if len(audio_buffer) > 32000:
-                try:
-                    # Save to temp file
-                    with tempfile.NamedTemporaryFile(delete=False, suffix='.webm') as tmp:
-                        tmp.write(bytes(audio_buffer))
-                        tmp_path = tmp.name
-                    
-                    try:
-                        if hasattr(transcriber, 'transcribe'):
-                            result = await asyncio.to_thread(transcriber.transcribe, tmp_path)
-                            text = result.get('text', '') if isinstance(result, dict) else str(result)
-                            if text.strip():
-                                await websocket.send_json({"text": text.strip()})
-                    finally:
-                        os.unlink(tmp_path)
-                    
-                    audio_buffer.clear()
-                except Exception as e:
-                    await websocket.send_json({"error": str(e)})
-                    
-    except WebSocketDisconnect:
-        pass
-    except Exception as e:
-        try:
-            await websocket.send_json({"error": str(e)})
-        except:
-            pass
-
-
-# ============================================================
-# MODEL ENDPOINTS
-# ============================================================
-
-@router.get("/api/model/info")
-async def get_model_info():
-    """Get model information"""
-    components = get_components()
-    neural_brain = components.get('neural_brain')
-    
-    if not neural_brain:
-        return {"status": "not_loaded"}
-    
-    try:
-        if hasattr(neural_brain, 'get_stats'):
-            stats = neural_brain.get_stats()
-            return {
-                "status": "ready",
-                "size": stats.get('model_size', 'unknown'),
-                "params": stats.get('model_params', 0),
-                "vocab_size": stats.get('vocab_size', 0),
-                "device": stats.get('device', 'cpu')
-            }
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
-
-
-@router.post("/api/model/change-size")
-async def change_model_size(new_size: str, backfill: bool = True):
-    """Change model size"""
-    components = get_components()
-    neural_brain = components.get('neural_brain')
-    
-    if not neural_brain:
-        return {"success": False, "error": "Neural brain not loaded"}
-    
-    try:
-        if hasattr(neural_brain, 'change_size'):
-            result = await asyncio.to_thread(neural_brain.change_size, new_size, backfill=backfill)
-            return {"success": True, "result": result}
-        else:
-            return {"success": False, "error": "change_size not implemented"}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-
-
-# ============================================================
-# FRONTEND ROUTES
+# OTHER ENDPOINTS
 # ============================================================
 
 @router.get("/")
 async def index():
-    """Serve frontend"""
     static_path = Path(__file__).parent.parent / "static" / "index.html"
     if static_path.exists():
         return FileResponse(static_path)
-    return {"message": "GroundZero API", "docs": "/docs"}
-
+    return {"message": "GroundZero API"}
 
 @router.get("/health")
 async def health():
-    """Health check"""
     return {"status": "healthy"}
