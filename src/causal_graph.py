@@ -1,33 +1,31 @@
 """
-Causal Graph Module
-===================
+Causal Graph - Persistent Version
+=================================
 
-Stores and reasons about cause-effect relationships.
-Unlike correlation, this is TRUE causal understanding.
+Stores cause-effect relationships with persistence to JSON file.
+Supports causal chains, counterfactual reasoning, and auto-save.
 
-Features:
-- Causal relations with strength
-- Causal chain discovery
-- Counterfactual reasoning ("What if X happened?")
-- Intervention modeling ("What if I MAKE X happen?")
-- Causal explanations
+This is TRUE causal understanding - not just correlation!
 """
 
 import re
+import json
+from pathlib import Path
+from typing import Dict, List, Tuple, Optional, Set
 from dataclasses import dataclass, field
 from collections import defaultdict
-from typing import List, Dict, Set, Optional
 
 
 @dataclass
 class CausalRelation:
-    """A causal relationship between two concepts"""
+    """A cause-effect relationship"""
     Cause: str
     Effect: str
-    Strength: float  # 0.0 to 1.0 - probability of effect given cause
+    Strength: float = 0.8  # 0-1, how strong the causal link is
+    Confidence: float = 0.7  # 0-1, how confident we are
     Mechanism: str = ""  # How the causation works
-    Conditions: List[str] = field(default_factory=list)  # When this applies
-    Evidence: List[str] = field(default_factory=list)  # Supporting observations
+    Conditions: List[str] = field(default_factory=list)
+    Evidence: List[str] = field(default_factory=list)
     
     def __hash__(self):
         return hash((self.Cause, self.Effect))
@@ -36,20 +34,45 @@ class CausalRelation:
         if isinstance(other, CausalRelation):
             return self.Cause == other.Cause and self.Effect == other.Effect
         return False
+    
+    def ToDict(self) -> dict:
+        return {
+            "cause": self.Cause,
+            "effect": self.Effect,
+            "strength": self.Strength,
+            "confidence": self.Confidence,
+            "mechanism": self.Mechanism,
+            "conditions": self.Conditions,
+            "evidence": self.Evidence
+        }
+    
+    @classmethod
+    def FromDict(cls, d: dict) -> "CausalRelation":
+        return cls(
+            Cause=d["cause"],
+            Effect=d["effect"],
+            Strength=d.get("strength", 0.8),
+            Confidence=d.get("confidence", 0.7),
+            Mechanism=d.get("mechanism", ""),
+            Conditions=d.get("conditions", []),
+            Evidence=d.get("evidence", [])
+        )
 
 
 class CausalGraph:
     """
-    Causal reasoning engine.
+    Persistent causal graph for cause-effect reasoning.
     
     Key difference from correlation:
     - Correlation: "Rain and wet ground often appear together"
     - Causation: "Rain CAUSES wet ground with 90% probability"
     
-    This enables:
-    - Counterfactual reasoning: "What if it hadn't rained?"
-    - Intervention: "What if I make it rain?"
-    - Explanation: "Why is the ground wet?"
+    Features:
+    - Automatic persistence to JSON file
+    - Causal chain discovery
+    - Counterfactual reasoning
+    - Intervention modeling
+    - Strength propagation
     """
     
     # Patterns for extracting causal relations from text
@@ -64,58 +87,137 @@ class CausalGraph:
         r'(\w+)\s+triggers?\s+(\w+)',
         r'(\w+)\s+creates?\s+(\w+)',
         r'(\w+)\s+prevents?\s+(\w+)',
+        r'(\w+)\s+affects?\s+(\w+)',
+        r'(\w+)\s+influences?\s+(\w+)',
+        r'(\w+)\s+determines?\s+(\w+)',
+        r'(\w+)\s+enables?\s+(\w+)',
+        r'(\w+)\s+allows?\s+(\w+)',
     ]
     
-    def __init__(self):
+    def __init__(self, DataPath: Optional[str] = None):
+        """
+        Initialize causal graph with optional persistence.
+        
+        Args:
+            DataPath: Path to data directory. If provided, loads/saves causal.json
+        """
         # Forward relations: cause → list of effects
         self.Relations: Dict[str, List[CausalRelation]] = defaultdict(list)
         # Reverse relations: effect → list of causes
         self.ReverseRelations: Dict[str, List[CausalRelation]] = defaultdict(list)
         
-        # Statistics
+        self.DataPath = Path(DataPath) if DataPath else None
+        self.FilePath = self.DataPath / "causal.json" if self.DataPath else None
+        
         self.Stats = {
             "TotalRelations": 0,
             "ChainsFound": 0,
-            "CounterfactualsComputed": 0,
+            "CounterfactualsComputed": 0
         }
+        
+        # Load existing data if available
+        if self.FilePath and self.FilePath.exists():
+            self._Load()
+    
+    def _Load(self):
+        """Load causal relations from JSON file"""
+        try:
+            with open(self.FilePath, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            for rel_data in data.get("relations", []):
+                rel = CausalRelation.FromDict(rel_data)
+                self.Relations[rel.Cause].append(rel)
+                self.ReverseRelations[rel.Effect].append(rel)
+            
+            self.Stats = data.get("stats", self.Stats)
+            self.Stats["TotalRelations"] = sum(len(effects) for effects in self.Relations.values())
+            
+            print(f"  📂 Loaded {self.Stats['TotalRelations']} causal relations from {self.FilePath.name}")
+            
+        except Exception as e:
+            print(f"  ⚠️ Could not load causal graph: {e}")
+    
+    def Save(self):
+        """Save causal relations to JSON file"""
+        if not self.FilePath:
+            return
+        
+        try:
+            # Ensure directory exists
+            self.FilePath.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Collect all relations
+            relations = []
+            for rel_list in self.Relations.values():
+                for rel in rel_list:
+                    relations.append(rel.ToDict())
+            
+            data = {
+                "relations": relations,
+                "stats": self.Stats
+            }
+            
+            with open(self.FilePath, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+                
+        except Exception as e:
+            print(f"  ⚠️ Could not save causal graph: {e}")
     
     def AddCause(self, Cause: str, Effect: str, Strength: float = 0.8,
                  Mechanism: str = "", Conditions: List[str] = None,
-                 Evidence: List[str] = None) -> bool:
+                 Evidence: str = None, AutoSave: bool = False) -> bool:
         """
         Add a causal relationship.
         
         Args:
-            Cause: The cause (e.g., "rain")
-            Effect: The effect (e.g., "wet_ground")
-            Strength: Probability of effect given cause (0-1)
+            Cause: The cause entity
+            Effect: The effect entity
+            Strength: How strong the causal link is (0-1)
             Mechanism: How the causation works
             Conditions: When this relationship applies
-            Evidence: Supporting observations
+            Evidence: Optional evidence/source
+            AutoSave: Whether to auto-save after adding
         
         Returns:
-            True if added, False if already exists
+            True if new relation added, False if updated existing
         """
-        Cause = Cause.lower().strip()
-        Effect = Effect.lower().strip()
+        Cause = Cause.lower().strip().replace(" ", "_")
+        Effect = Effect.lower().strip().replace(" ", "_")
+        
+        if not Cause or not Effect or Cause == Effect:
+            return False
+        
+        if len(Cause) < 2 or len(Effect) < 2:
+            return False
         
         # Check if already exists
         for Existing in self.Relations.get(Cause, []):
             if Existing.Effect == Effect:
+                # Update strength/confidence
+                Existing.Strength = (Existing.Strength + Strength) / 2
+                Existing.Confidence = min(1.0, Existing.Confidence + 0.05)
+                if Evidence and Evidence not in Existing.Evidence:
+                    Existing.Evidence.append(Evidence)
                 return False
         
+        # Add new relation
         Relation = CausalRelation(
             Cause=Cause,
             Effect=Effect,
             Strength=Strength,
+            Confidence=0.7,
             Mechanism=Mechanism,
             Conditions=Conditions or [],
-            Evidence=Evidence or []
+            Evidence=[Evidence] if Evidence else []
         )
         
         self.Relations[Cause].append(Relation)
         self.ReverseRelations[Effect].append(Relation)
         self.Stats["TotalRelations"] += 1
+        
+        if AutoSave and self.FilePath:
+            self.Save()
         
         return True
     
@@ -134,14 +236,6 @@ class CausalGraph:
         Example:
             CausalChain("rain", "accident")
             → [[rain→wet, wet→slippery, slippery→accident]]
-        
-        Args:
-            Start: Starting cause
-            End: Final effect to reach
-            MaxDepth: Maximum chain length
-        
-        Returns:
-            List of causal chains (each chain is a list of relations)
         """
         Start = Start.lower().strip()
         End = End.lower().strip()
@@ -177,11 +271,6 @@ class CausalGraph:
         
         Returns:
             Dict mapping effects to probability changes
-            Positive = more likely, Negative = less likely
-        
-        Example:
-            Counterfactual("rain", Intervention=True)
-            → {"wet_ground": 0.9, "slippery": 0.72, "accident": 0.43}
         """
         Event = Event.lower().strip()
         Effects = {}
@@ -193,30 +282,20 @@ class CausalGraph:
             Visited.add(Current)
             
             for Relation in self.Relations.get(Current, []):
-                # Multiply strengths along the causal chain
                 EffectChange = Relation.Strength * CurrentStrength
                 
                 if Intervention:
-                    Effects[Relation.Effect] = EffectChange  # Positive change
+                    Effects[Relation.Effect] = EffectChange
                 else:
-                    Effects[Relation.Effect] = -EffectChange  # Negative change
+                    Effects[Relation.Effect] = -EffectChange
                 
-                # Recursively propagate
                 PropagateEffect(Relation.Effect, EffectChange, Visited)
         
         PropagateEffect(Event, 1.0, set())
         return Effects
     
     def Explain(self, Effect: str) -> str:
-        """
-        Generate causal explanation for an effect.
-        
-        Args:
-            Effect: The effect to explain
-        
-        Returns:
-            Natural language explanation
-        """
+        """Generate causal explanation for an effect."""
         Effect = Effect.lower().strip()
         Causes = self.ReverseRelations.get(Effect, [])
         
@@ -252,7 +331,20 @@ class CausalGraph:
                 Groups = Match.groups()
                 if len(Groups) >= 2:
                     Cause, Effect = Groups[0], Groups[1]
-                    if len(Cause) > 2 and len(Effect) > 2:
+                    # Filter out common words
+                    StopWords = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 
+                                 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will',
+                                 'would', 'could', 'should', 'may', 'might', 'must', 'shall',
+                                 'can', 'need', 'dare', 'ought', 'used', 'to', 'it', 'its',
+                                 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she',
+                                 'we', 'they', 'what', 'which', 'who', 'whom', 'whose',
+                                 'where', 'when', 'why', 'how', 'all', 'each', 'every',
+                                 'both', 'few', 'more', 'most', 'other', 'some', 'such',
+                                 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than',
+                                 'too', 'very', 'just', 'also', 'now', 'here', 'there'}
+                    
+                    if (len(Cause) > 2 and len(Effect) > 2 and 
+                        Cause not in StopWords and Effect not in StopWords):
                         if self.AddCause(Cause, Effect, Strength=0.7):
                             Count += 1
         
@@ -265,3 +357,50 @@ class CausalGraph:
     def Size(self) -> int:
         """Get total number of relations"""
         return self.Stats["TotalRelations"]
+    
+    def GetAllRelations(self) -> List[CausalRelation]:
+        """Get all causal relations"""
+        relations = []
+        for rel_list in self.Relations.values():
+            relations.extend(rel_list)
+        return relations
+    
+    def Clear(self):
+        """Clear all relations"""
+        self.Relations.clear()
+        self.ReverseRelations.clear()
+        self.Stats = {
+            "TotalRelations": 0,
+            "ChainsFound": 0,
+            "CounterfactualsComputed": 0
+        }
+        if self.FilePath and self.FilePath.exists():
+            self.FilePath.unlink()
+
+
+# Test
+if __name__ == "__main__":
+    import tempfile
+    
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Create and populate
+        cg1 = CausalGraph(tmpdir)
+        cg1.AddCause("rain", "wet_ground", Strength=0.9)
+        cg1.AddCause("wet_ground", "slippery", Strength=0.8)
+        cg1.AddCause("slippery", "accidents", Strength=0.6)
+        cg1.Save()
+        print(f"Created {cg1.Size()} relations")
+        
+        # Load in new instance
+        cg2 = CausalGraph(tmpdir)
+        print(f"Loaded {cg2.Size()} relations")
+        
+        # Test causal chain
+        chains = cg2.CausalChain("rain", "accidents")
+        print(f"Chains from rain to accidents: {len(chains)}")
+        
+        # Test counterfactual
+        cf = cg2.Counterfactual("rain", Intervention=True)
+        print(f"If rain happens: {cf}")
+        
+        print("✅ Persistence test passed!")

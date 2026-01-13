@@ -1,25 +1,27 @@
 # GroundZero AI - Requirements
-# =============================
+# ============================
 
-# Core (no external dependencies needed for basic functionality!)
+# State-of-the-Art NLP
+spacy>=3.5.0
 
-# Optional: PyTorch for neural components
-# Uncomment to enable neural world model
-# torch>=2.0.0
+# Note: After installing, download the English model:
+#   python -m spacy download en_core_web_sm
+#
+# For better accuracy (recommended):
+#   python -m spacy download en_core_web_md
+#
+# For best accuracy (requires more RAM):
+#   python -m spacy download en_core_web_lg
 
-# Optional: For advanced NLP
-# spacy>=3.0.0
-# nltk>=3.8.0
+# Optional: Higher-level NLP utilities
+# textacy>=0.12.0
 
-# Optional: For web dashboard enhancements
-# flask>=2.0.0
-# flask-cors>=3.0.0
-
-# Optional: For data visualization
-# matplotlib>=3.5.0
-# plotly>=5.0.0
-
-# Development dependencies
-# pytest>=7.0.0
-# black>=22.0.0
-# mypy>=0.990
+# The rest uses Python standard library:
+# - sqlite3 (built-in)
+# - json (built-in)
+# - urllib (built-in)
+# - http.server (built-in)
+# - dataclasses (built-in, Python 3.7+)
+# - typing (built-in)
+# - pathlib (built-in)
+# - re (built-in)

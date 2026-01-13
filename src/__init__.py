@@ -1,18 +1,6 @@
 """
-GroundZero AI - Neurosymbolic Intelligence System
-================================================
-
-A system that achieves genuine understanding beyond pattern matching.
-
-Components:
-- KnowledgeGraph: Explicit fact storage
-- CausalGraph: Cause-effect reasoning
-- QuestionTypeDetector: Auto-detect question types
-- MetacognitiveController: Self-awareness
-- ChainOfThoughtReasoner: Step-by-step reasoning
-- Constitution: Safety & alignment
-- SmartChatEngine: Unified interface
-- ProgressTracker: Learning progress
+GroundZero AI - Neurosymbolic Intelligence System v3.0
+======================================================
 """
 
 from .knowledge_graph import KnowledgeGraph, KnowledgeTriple
@@ -23,39 +11,21 @@ from .reasoning import ChainOfThoughtReasoner, ReasoningStep
 from .constitutional import Constitution
 from .chat_engine import SmartChatEngine, ChatResponse
 from .progress_tracker import ProgressTracker
+from .auto_learner import AutoLearner, LearnedContent
+from .neural_engine import NeuralEngine, NeuralStats
 
-__version__ = "2.0.0"
+__version__ = "3.0.0"
 __author__ = "GroundZero AI"
 
 __all__ = [
-    # Knowledge
-    "KnowledgeGraph",
-    "KnowledgeTriple",
-    
-    # Causal
-    "CausalGraph", 
-    "CausalRelation",
-    
-    # Detection
-    "QuestionTypeDetector",
-    "QuestionType",
-    "ThinkingMode",
-    
-    # Metacognition
-    "MetacognitiveController",
-    "MetacognitiveState",
-    
-    # Reasoning
-    "ChainOfThoughtReasoner",
-    "ReasoningStep",
-    
-    # Constitutional
+    "KnowledgeGraph", "KnowledgeTriple",
+    "CausalGraph", "CausalRelation",
+    "NeuralEngine", "NeuralStats",
+    "QuestionTypeDetector", "QuestionType", "ThinkingMode",
+    "MetacognitiveController", "MetacognitiveState",
+    "ChainOfThoughtReasoner", "ReasoningStep",
     "Constitution",
-    
-    # Chat
-    "SmartChatEngine",
-    "ChatResponse",
-    
-    # Progress
+    "SmartChatEngine", "ChatResponse",
     "ProgressTracker",
+    "AutoLearner", "LearnedContent",
 ]

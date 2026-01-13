@@ -10,6 +10,7 @@ Features:
 - Uses System 1/2 thinking appropriately
 - Applies constitutional checks
 - Provides metacognitive awareness
+- PERSISTENT storage for both facts AND causal relations
 """
 
 import time
@@ -49,6 +50,7 @@ class SmartChatEngine:
     3. Uses System 1/2 thinking appropriately
     4. Applies constitutional checks
     5. Provides metacognitive awareness
+    6. PERSISTS both facts and causal relations!
     """
     
     def __init__(self, DataDir: str = "./data"):
@@ -61,9 +63,10 @@ class SmartChatEngine:
         self.DataDir = Path(DataDir)
         self.DataDir.mkdir(parents=True, exist_ok=True)
         
-        # Initialize components
+        # Initialize components - BOTH are now persistent!
         self.Knowledge = KnowledgeGraph(str(self.DataDir / "knowledge.db"))
-        self.Causal = CausalGraph()
+        self.Causal = CausalGraph(str(self.DataDir))  # ← NOW PERSISTENT!
+        
         self.QuestionDetector = QuestionTypeDetector()
         self.Metacognition = MetacognitiveController()
         self.Reasoner = ChainOfThoughtReasoner(self.Knowledge, self.Causal)
@@ -365,8 +368,9 @@ class SmartChatEngine:
         }
     
     def Save(self):
-        """Save all data"""
+        """Save all data - BOTH knowledge AND causal!"""
         self.Knowledge.Save()
+        self.Causal.Save()  # ← NOW SAVES CAUSAL TOO!
     
     def Close(self):
         """Close connections"""
