@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GroundZero AI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1>🧠 GroundZero AI</h1>
+                <span class="tagline"><span class="live-dot"></span>Neurosymbolic Intelligence</span>
+            </div>
+            <div class="header-right">
+                <button class="btn" onclick="openModal('capabilities')">⚡ Capabilities</button>
+                <button class="btn" onclick="openModal('research')">🔬 Research</button>
+                <button class="btn" onclick="openModal('howto')">❓ How It Works</button>
+                <button class="theme-btn" onclick="toggleTheme()">🌙</button>
+            </div>
+        </header>
+        
+        <!-- Stats Row -->
+        <div class="stats-row">
+            <div class="stat"><span class="stat-val" id="level">0</span><span class="stat-lbl">Level</span></div>
+            <div class="stat"><span class="stat-val" id="facts">0</span><span class="stat-lbl">Facts</span></div>
+            <div class="stat"><span class="stat-val" id="causal">0</span><span class="stat-lbl">Causal</span></div>
+            <div class="stat"><span class="stat-val" id="questions">0</span><span class="stat-lbl">Questions</span></div>
+            <div class="stat"><span class="stat-val" id="confidence">0%</span><span class="stat-lbl">Confidence</span></div>
+            <div class="stat"><span class="stat-val">Auto</span><span class="stat-lbl">Thinking</span></div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-grid">
+            <!-- Progress Panel -->
+            <div class="panel">
+                <h2>📈 Progress</h2>
+                <div class="level-badge" id="level-badge">LEVEL 0</div>
+                <div class="level-name" id="level-name">Starting Out</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+                <div class="progress-text"><span id="progress-pct">0%</span> to next level</div>
+            </div>
+
+            <!-- Timeline Panel -->
+            <div class="panel timeline-panel">
+                <h2>🎯 Milestones</h2>
+                <div class="mini-timeline" id="timeline"></div>
+            </div>
+
+            <!-- Question Types Panel -->
+            <div class="panel">
+                <h2>🎯 Auto-Detection</h2>
+                <div class="q-types">
+                    <span class="q-tag">❓ Factual</span>
+                    <span class="q-tag">🔗 Causal</span>
+                    <span class="q-tag">🔮 What-If</span>
+                    <span class="q-tag">📋 How-To</span>
+                    <span class="q-tag">⚖️ Compare</span>
+                    <span class="q-tag">📖 Define</span>
+                    <span class="q-tag">💭 Opinion</span>
+                    <span class="q-tag">👋 Greeting</span>
+                </div>
+            </div>
+
+            <!-- Architecture Panel -->
+            <div class="panel">
+                <h2>🔄 Pipeline</h2>
+                <div class="pipeline">
+                    <span class="pipe-node">📥 Input</span>
+                    <span class="pipe-arrow">→</span>
+                    <span class="pipe-node">🎯 Detect</span>
+                    <span class="pipe-arrow">→</span>
+                    <span class="pipe-node">🧠 Think</span>
+                    <span class="pipe-arrow">→</span>
+                    <span class="pipe-node">📜 Check</span>
+                    <span class="pipe-arrow">→</span>
+                    <span class="pipe-node">📤 Reply</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            GroundZero AI v2.0 • JEPA World Models • Dual System Thinking • Chain-of-Thought • Constitutional AI
+        </footer>
+    </div>
+
+    <!-- Capabilities Modal -->
+    <div class="modal" id="modal-capabilities">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('capabilities')">×</button>
+            <h2>⚡ Capabilities</h2>
+            <div class="cap-grid">
+                <div class="cap"><strong>🌍 World Model</strong><br>JEPA-style prediction in abstract space</div>
+                <div class="cap"><strong>🧩 Dual Thinking</strong><br>System 1 (fast) + System 2 (deep)</div>
+                <div class="cap"><strong>⛓️ Chain-of-Thought</strong><br>Step-by-step reasoning with verification</div>
+                <div class="cap"><strong>📜 Constitutional</strong><br>Self-critique: helpful, harmless, honest</div>
+                <div class="cap"><strong>🔍 Metacognition</strong><br>Knows what it knows and doesn't know</div>
+                <div class="cap"><strong>🗄️ Knowledge Graph</strong><br>Explicit facts as queryable triples</div>
+                <div class="cap"><strong>🔗 Causal Graph</strong><br>True cause-effect with counterfactuals</div>
+                <div class="cap"><strong>🎯 Smart Detection</strong><br>Auto-detects 12 question types</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Research Modal -->
+    <div class="modal" id="modal-research">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('research')">×</button>
+            <h2>🔬 Research Sources</h2>
+            <div class="research-list">
+                <div class="res"><strong>Meta AI</strong> - JEPA World Models (Yann LeCun)</div>
+                <div class="res"><strong>DeepMind</strong> - Multi-Step Reasoning Architecture</div>
+                <div class="res"><strong>OpenAI</strong> - o1/o3 Chain-of-Thought Reasoning</div>
+                <div class="res"><strong>Anthropic</strong> - Constitutional AI (RLAIF)</div>
+                <div class="res"><strong>DeepSeek</strong> - R1 Open-Source Reasoning</div>
+                <div class="res"><strong>IBM Research</strong> - SOFAI Fast/Slow Architecture</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- How It Works Modal -->
+    <div class="modal" id="modal-howto">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('howto')">×</button>
+            <h2>❓ How It Works</h2>
+            <div class="howto-content">
+                <p><strong>1. Teach facts:</strong> "Dogs are animals. Rain causes wet ground."</p>
+                <p><strong>2. System extracts:</strong> (dog, is_a, animal) + rain→wet_ground (0.9)</p>
+                <p><strong>3. System infers:</strong> Transitive: dog→mammal→animal</p>
+                <p><strong>4. You ask:</strong> "What if it rains?" → wet_ground +90%, slippery +72%</p>
+                <hr>
+                <p><strong>Training modes:</strong></p>
+                <code>python main.py train</code>
+                <p>• Manual - teach facts yourself</p>
+                <p>• Auto - learn from Wikipedia continuously</p>
+                <p>• Quick - learn 20 articles and stop</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
