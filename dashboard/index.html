@@ -50,9 +50,9 @@
             <div class="stat"><span class="stat-val" id="confidence">0%</span><span class="stat-lbl">Confidence</span></div>
         </div>
 
-        <!-- Main Content - Simple 3x2 Grid -->
+        <!-- Main Content - 3x2 Grid -->
         <div class="main-grid">
-            <!-- Row 1 -->
+            <!-- Row 1: Progress | Neural | Quick Actions -->
             <div class="panel">
                 <h2>📈 Progress</h2>
                 <div class="level-badge" id="level-badge">LEVEL 0</div>
@@ -88,37 +88,32 @@
                 </div>
             </div>
 
-            <div class="panel">
-                <h2>🎯 Milestones</h2>
-                <div class="mini-timeline" id="timeline"></div>
+            <!-- Quick Actions Panel (Buttons) -->
+            <div class="panel panel-actions">
+                <h2>⚙️ Quick Actions</h2>
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="openModal('detection')">
+                        <span class="action-icon">🎯</span>
+                        <span class="action-label">Detection</span>
+                        <span class="action-desc">Question types</span>
+                    </button>
+                    <button class="action-btn" onclick="openModal('ai-caps')">
+                        <span class="action-icon">✨</span>
+                        <span class="action-label">AI Capabilities</span>
+                        <span class="action-desc">What I can do</span>
+                    </button>
+                    <button class="action-btn" onclick="openModal('pipeline')">
+                        <span class="action-icon">🔄</span>
+                        <span class="action-label">Pipeline</span>
+                        <span class="action-desc">How I process</span>
+                    </button>
+                </div>
             </div>
 
-            <!-- Row 2 -->
-            <div class="panel panel-info">
-                <div class="info-section">
-                    <h3>🎯 Detection</h3>
-                    <div class="q-types">
-                        <span class="q-tag">❓ Factual</span>
-                        <span class="q-tag">🔗 Causal</span>
-                        <span class="q-tag">🔮 What-If</span>
-                        <span class="q-tag">📋 How-To</span>
-                        <span class="q-tag">⚖️ Compare</span>
-                    </div>
-                </div>
-                <div class="info-section">
-                    <h3>✨ Capabilities</h3>
-                    <div class="caps-icons">
-                        <span class="cap-icon" id="capUnderstand" title="Understand">🧠</span>
-                        <span class="cap-icon" id="capGeneralize" title="Generalize">🔮</span>
-                        <span class="cap-icon" id="capLearn" title="Learn">📚</span>
-                        <span class="cap-icon" id="capReason" title="Reason">⚡</span>
-                        <span class="cap-icon" id="capCreate" title="Create">💡</span>
-                    </div>
-                </div>
-                <div class="info-section">
-                    <h3>🔄 Pipeline</h3>
-                    <div class="pipeline">📥 → 🎯 → 🧠 → 📤</div>
-                </div>
+            <!-- Row 2: Milestones | Loss Chart | Chat -->
+            <div class="panel panel-milestones">
+                <h2>🎯 Milestones</h2>
+                <div class="mini-timeline" id="timeline"></div>
             </div>
 
             <div class="panel panel-chart">
@@ -146,6 +141,139 @@
         </footer>
     </div>
 
+    <!-- Detection Modal -->
+    <div class="modal" id="modal-detection">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('detection')">×</button>
+            <h2>🎯 Auto-Detection</h2>
+            <p class="modal-intro">I automatically detect the type of question you're asking:</p>
+            <div class="detection-grid">
+                <div class="detect-item">
+                    <span class="detect-icon">❓</span>
+                    <div>
+                        <strong>Factual</strong>
+                        <p>What is X? Who is Y?</p>
+                    </div>
+                </div>
+                <div class="detect-item">
+                    <span class="detect-icon">🔗</span>
+                    <div>
+                        <strong>Causal</strong>
+                        <p>Why does X cause Y?</p>
+                    </div>
+                </div>
+                <div class="detect-item">
+                    <span class="detect-icon">🔮</span>
+                    <div>
+                        <strong>What-If</strong>
+                        <p>What would happen if...?</p>
+                    </div>
+                </div>
+                <div class="detect-item">
+                    <span class="detect-icon">📋</span>
+                    <div>
+                        <strong>How-To</strong>
+                        <p>How do I do X?</p>
+                    </div>
+                </div>
+                <div class="detect-item">
+                    <span class="detect-icon">⚖️</span>
+                    <div>
+                        <strong>Compare</strong>
+                        <p>What's the difference?</p>
+                    </div>
+                </div>
+                <div class="detect-item">
+                    <span class="detect-icon">📖</span>
+                    <div>
+                        <strong>Define</strong>
+                        <p>Define X for me</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Capabilities Modal -->
+    <div class="modal" id="modal-ai-caps">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('ai-caps')">×</button>
+            <h2>✨ AI Capabilities</h2>
+            <p class="modal-intro">My current abilities based on training:</p>
+            <div class="caps-list">
+                <div class="cap-item">
+                    <span class="cap-status" id="capStatusUnderstand">○</span>
+                    <div>
+                        <strong>🧠 Understand</strong>
+                        <p>Process and comprehend knowledge</p>
+                    </div>
+                </div>
+                <div class="cap-item">
+                    <span class="cap-status" id="capStatusGeneralize">○</span>
+                    <div>
+                        <strong>🔮 Generalize</strong>
+                        <p>Apply learning to new situations</p>
+                    </div>
+                </div>
+                <div class="cap-item">
+                    <span class="cap-status" id="capStatusLearn">○</span>
+                    <div>
+                        <strong>📚 Learn</strong>
+                        <p>Acquire new knowledge from text</p>
+                    </div>
+                </div>
+                <div class="cap-item">
+                    <span class="cap-status" id="capStatusReason">○</span>
+                    <div>
+                        <strong>⚡ Reason</strong>
+                        <p>Make predictions and inferences</p>
+                    </div>
+                </div>
+                <div class="cap-item">
+                    <span class="cap-status" id="capStatusCreate">○</span>
+                    <div>
+                        <strong>💡 Create</strong>
+                        <p>Generate hypotheses and ideas</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pipeline Modal -->
+    <div class="modal" id="modal-pipeline">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('pipeline')">×</button>
+            <h2>🔄 Processing Pipeline</h2>
+            <p class="modal-intro">How I process your messages:</p>
+            <div class="pipeline-flow">
+                <div class="pipe-step">
+                    <span class="pipe-icon">📥</span>
+                    <strong>Input</strong>
+                    <p>Receive your message</p>
+                </div>
+                <div class="pipe-arrow">→</div>
+                <div class="pipe-step">
+                    <span class="pipe-icon">🎯</span>
+                    <strong>Detect</strong>
+                    <p>Identify question type</p>
+                </div>
+                <div class="pipe-arrow">→</div>
+                <div class="pipe-step">
+                    <span class="pipe-icon">🧠</span>
+                    <strong>Think</strong>
+                    <p>Query knowledge + neural</p>
+                </div>
+                <div class="pipe-arrow">→</div>
+                <div class="pipe-step">
+                    <span class="pipe-icon">📤</span>
+                    <strong>Output</strong>
+                    <p>Generate response</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Neural Graph Modal -->
     <div class="modal" id="modal-neural-graph">
         <div class="modal-content modal-wide">
@@ -169,11 +297,11 @@
         </div>
     </div>
 
-    <!-- Capabilities Modal -->
+    <!-- Capabilities Modal (Header) -->
     <div class="modal" id="modal-capabilities">
         <div class="modal-content">
             <button class="modal-close" onclick="closeModal('capabilities')">×</button>
-            <h2>⚡ Capabilities</h2>
+            <h2>⚡ System Capabilities</h2>
             <div class="cap-grid">
                 <div class="cap"><strong>🔮 Neural Network</strong><br>TransE embeddings for link prediction</div>
                 <div class="cap"><strong>🌍 World Model</strong><br>JEPA-style prediction</div>

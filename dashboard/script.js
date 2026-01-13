@@ -1,4 +1,4 @@
-// GroundZero AI Dashboard - Fixed Version
+// GroundZero AI Dashboard - Swapped Layout
 
 const API_BASE = '/api';
 const POLL_INTERVAL = 2000;
@@ -31,7 +31,6 @@ function loadSavedTheme() {
         document.body.classList.add('light-mode');
         document.getElementById('modeToggle').textContent = '☀️';
     }
-    
     const theme = localStorage.getItem('gz-theme') || 'blue';
     setTheme(theme);
 }
@@ -50,6 +49,7 @@ function updateChartColors() {
 function openModal(id) {
     document.getElementById('modal-' + id).classList.add('active');
     if (id === 'neural-graph') setTimeout(drawNeuralGraph, 100);
+    if (id === 'ai-caps') updateCapabilityModal();
 }
 
 function closeModal(id) {
@@ -162,14 +162,35 @@ function setBar(id, val, max) {
 }
 
 function updateCapabilities() {
-    [['capUnderstand', stats.neural.entities > 0],
-     ['capGeneralize', stats.neural.isTrained],
-     ['capLearn', stats.neural.epochs > 0],
-     ['capReason', stats.neural.predictions > 0],
-     ['capCreate', stats.neural.hypotheses > 0]
-    ].forEach(([id, active]) => {
+    const caps = [
+        ['capUnderstand', stats.neural.entities > 0],
+        ['capGeneralize', stats.neural.isTrained],
+        ['capLearn', stats.neural.epochs > 0],
+        ['capReason', stats.neural.predictions > 0],
+        ['capCreate', stats.neural.hypotheses > 0]
+    ];
+    
+    caps.forEach(([id, active]) => {
         const el = document.getElementById(id);
         if (el) el.classList.toggle('active', active);
+    });
+}
+
+function updateCapabilityModal() {
+    const caps = [
+        ['capStatusUnderstand', stats.neural.entities > 0],
+        ['capStatusGeneralize', stats.neural.isTrained],
+        ['capStatusLearn', stats.neural.epochs > 0],
+        ['capStatusReason', stats.neural.predictions > 0],
+        ['capStatusCreate', stats.neural.hypotheses > 0]
+    ];
+    
+    caps.forEach(([id, active]) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.textContent = active ? '●' : '○';
+            el.classList.toggle('active', active);
+        }
     });
 }
 

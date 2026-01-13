@@ -1,7 +1,7 @@
-/* GroundZero AI Dashboard - BIGGER FONTS & FIXED LAYOUT */
+/* GroundZero AI Dashboard - Swapped Layout */
 
 /* =============================================================================
-   THEMES - Vibrant Plain Colors
+   THEMES
    ============================================================================= */
 
 :root {
@@ -24,7 +24,6 @@
     --border: rgba(0,0,0,0.1);
 }
 
-/* Theme Colors */
 .theme-blue { --accent: #1d9bf0; --accent2: #4db5f9; }
 .theme-green { --accent: #17bf63; --accent2: #34d399; }
 .theme-purple { --accent: #7856ff; --accent2: #a78bfa; }
@@ -33,7 +32,7 @@
 .theme-red { --accent: #e0245e; --accent2: #f87171; }
 
 /* =============================================================================
-   BASE - Bigger fonts
+   BASE
    ============================================================================= */
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -44,7 +43,7 @@ body {
     color: var(--text);
     height: 100vh;
     overflow: hidden;
-    font-size: 16px; /* Base size increased */
+    font-size: 16px;
 }
 
 .dashboard {
@@ -122,7 +121,6 @@ body {
     border-color: var(--accent);
 }
 
-/* Theme Controls */
 .theme-controls {
     display: flex;
     gap: 8px;
@@ -145,9 +143,7 @@ body {
     justify-content: center;
 }
 
-.mode-toggle:hover {
-    border-color: var(--accent);
-}
+.mode-toggle:hover { border-color: var(--accent); }
 
 .theme-dropdown {
     padding: 10px 14px;
@@ -160,10 +156,7 @@ body {
     min-width: 100px;
 }
 
-.theme-dropdown:focus {
-    outline: none;
-    border-color: var(--accent);
-}
+.theme-dropdown:focus { outline: none; border-color: var(--accent); }
 
 /* =============================================================================
    STATS ROW
@@ -181,7 +174,6 @@ body {
     padding: 14px 10px;
     text-align: center;
     border: 1px solid var(--border);
-    transition: border-color 0.2s;
 }
 
 .stat:hover { border-color: var(--accent); }
@@ -198,21 +190,20 @@ body {
     font-size: 0.8rem;
     color: var(--text2);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
     margin-top: 4px;
 }
 
 .stat.neural-stat .stat-val { color: var(--accent2); }
 
 /* =============================================================================
-   MAIN GRID - Simple 3x2
+   MAIN GRID - 3x2
    ============================================================================= */
 
 .main-grid {
     flex: 1;
     display: grid;
     grid-template-columns: 1fr 1.5fr 1fr;
-    grid-template-rows: 1fr 1fr;
+    grid-template-rows: auto 1fr;
     gap: 12px;
     min-height: 0;
 }
@@ -361,8 +352,66 @@ body {
 .neural-metrics strong { color: var(--accent); font-size: 1.1rem; }
 
 /* =============================================================================
-   MILESTONES
+   QUICK ACTIONS PANEL (NEW)
    ============================================================================= */
+
+.panel-actions {
+    display: flex;
+    flex-direction: column;
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.action-btn:hover {
+    border-color: var(--accent);
+    background: var(--bg2);
+    transform: translateX(4px);
+}
+
+.action-icon {
+    font-size: 1.5rem;
+    width: 40px;
+    text-align: center;
+}
+
+.action-label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    display: block;
+}
+
+.action-desc {
+    font-size: 0.8rem;
+    color: var(--text2);
+    display: block;
+}
+
+/* =============================================================================
+   MILESTONES PANEL
+   ============================================================================= */
+
+.panel-milestones {
+    overflow: hidden;
+}
 
 .mini-timeline {
     flex: 1;
@@ -373,15 +422,15 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 0;
+    padding: 10px 0;
     border-bottom: 1px solid var(--border);
 }
 
 .tl-item:last-child { border-bottom: none; }
 
 .tl-dot {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
     background: var(--text2);
     flex-shrink: 0;
@@ -390,74 +439,14 @@ body {
 .tl-item.done .tl-dot { background: var(--accent); }
 .tl-item.current .tl-dot { background: var(--accent2); animation: pulse 1s infinite; }
 
-.tl-name { 
-    font-weight: 600; 
-    font-size: 0.95rem;
-}
-
-.tl-req { 
-    color: var(--text2); 
-    font-size: 0.85rem;
-}
-
-/* =============================================================================
-   INFO PANEL (Detection, Capabilities, Pipeline)
-   ============================================================================= */
-
-.panel-info {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.info-section h3 {
-    font-size: 0.9rem;
-    color: var(--accent);
-    margin-bottom: 8px;
-}
-
-.q-types {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-.q-tag {
-    background: var(--bg);
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    border: 1px solid var(--border);
-}
-
-.caps-icons {
-    display: flex;
-    gap: 12px;
-}
-
-.cap-icon {
-    font-size: 1.5rem;
-    opacity: 0.3;
-    transition: all 0.3s;
-}
-
-.cap-icon.active {
-    opacity: 1;
-    transform: scale(1.1);
-}
-
-.pipeline {
-    font-size: 1.2rem;
-    color: var(--text2);
-}
+.tl-name { font-weight: 600; font-size: 1rem; }
+.tl-req { color: var(--text2); font-size: 0.85rem; }
 
 /* =============================================================================
    CHART PANEL
    ============================================================================= */
 
-.panel-chart {
-    min-height: 0;
-}
+.panel-chart { min-height: 0; }
 
 .chart-container {
     flex: 1;
@@ -466,11 +455,13 @@ body {
 }
 
 /* =============================================================================
-   CHAT PANEL
+   CHAT PANEL - TALLER
    ============================================================================= */
 
 .panel-chat {
     min-height: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .chat-messages {
@@ -478,16 +469,17 @@ body {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
     margin-bottom: 12px;
+    padding-right: 8px;
 }
 
 .msg {
-    padding: 10px 14px;
+    padding: 12px 16px;
     border-radius: 18px;
     max-width: 90%;
-    font-size: 0.95rem;
-    line-height: 1.4;
+    font-size: 1rem;
+    line-height: 1.5;
 }
 
 .msg.bot {
@@ -505,17 +497,17 @@ body {
 
 .chat-input {
     display: flex;
-    gap: 8px;
+    gap: 10px;
 }
 
 .chat-input input {
     flex: 1;
-    padding: 12px 18px;
+    padding: 14px 20px;
     border: 1px solid var(--border);
     border-radius: 25px;
     background: var(--bg);
     color: var(--text);
-    font-size: 0.95rem;
+    font-size: 1rem;
     outline: none;
 }
 
@@ -525,11 +517,11 @@ body {
     background: var(--accent);
     border: none;
     border-radius: 50%;
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
     color: white;
     cursor: pointer;
-    font-size: 1.1rem;
+    font-size: 1.2rem;
 }
 
 .chat-input button:hover { transform: scale(1.05); }
@@ -568,7 +560,7 @@ body {
     background: var(--card);
     border-radius: 16px;
     padding: 28px;
-    max-width: 550px;
+    max-width: 500px;
     width: 90%;
     max-height: 85vh;
     overflow-y: auto;
@@ -592,9 +584,126 @@ body {
 .modal-close:hover { color: var(--accent); }
 
 .modal h2 {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     color: var(--accent);
     font-size: 1.3rem;
+}
+
+.modal-intro {
+    color: var(--text2);
+    margin-bottom: 20px;
+    font-size: 1rem;
+}
+
+/* Detection Modal */
+.detection-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.detect-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px;
+    background: var(--bg);
+    border-radius: 10px;
+}
+
+.detect-icon {
+    font-size: 1.5rem;
+}
+
+.detect-item strong {
+    display: block;
+    font-size: 1rem;
+    margin-bottom: 4px;
+}
+
+.detect-item p {
+    font-size: 0.85rem;
+    color: var(--text2);
+    margin: 0;
+}
+
+/* AI Capabilities Modal */
+.caps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.cap-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    background: var(--bg);
+    border-radius: 10px;
+}
+
+.cap-status {
+    font-size: 1.2rem;
+    width: 24px;
+    text-align: center;
+}
+
+.cap-status.active {
+    color: var(--accent);
+}
+
+.cap-item strong {
+    display: block;
+    font-size: 1rem;
+    margin-bottom: 2px;
+}
+
+.cap-item p {
+    font-size: 0.85rem;
+    color: var(--text2);
+    margin: 0;
+}
+
+/* Pipeline Modal */
+.pipeline-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 20px 0;
+}
+
+.pipe-step {
+    text-align: center;
+    padding: 16px;
+    background: var(--bg);
+    border-radius: 12px;
+    min-width: 100px;
+}
+
+.pipe-icon {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.pipe-step strong {
+    display: block;
+    font-size: 1rem;
+    margin-bottom: 4px;
+}
+
+.pipe-step p {
+    font-size: 0.8rem;
+    color: var(--text2);
+    margin: 0;
+}
+
+.pipe-arrow {
+    font-size: 1.5rem;
+    color: var(--accent);
 }
 
 /* Graph Modal */
@@ -647,7 +756,7 @@ body {
 
 .hypothesis .conf { color: var(--accent); font-weight: 600; }
 
-/* Capabilities Grid */
+/* Capabilities Grid (Header Modal) */
 .cap-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -706,7 +815,6 @@ body {
 @media (max-width: 1100px) {
     .main-grid {
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: auto auto auto;
     }
     .panel-neural { grid-column: span 2; }
 }
@@ -718,4 +826,7 @@ body {
     .header-right { flex-wrap: wrap; justify-content: center; }
     .stats-row { flex-wrap: wrap; }
     .stat { flex: 1 1 30%; min-width: 80px; }
+    .detection-grid { grid-template-columns: 1fr; }
+    .pipeline-flow { flex-direction: column; }
+    .pipe-arrow { transform: rotate(90deg); }
 }
