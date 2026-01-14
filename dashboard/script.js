@@ -1,7 +1,7 @@
 // GroundZero AI Dashboard - Fixed Neural Stats
 
 const API_BASE = '/api';
-const POLL_INTERVAL = 2000;
+const POLL_INTERVAL = 1000; // 1 second for faster updates
 
 let lossChart = null;
 let lastUpdateTime = null;
@@ -422,6 +422,111 @@ function drawNeuralGraph() {
 function refreshGraph() { drawNeuralGraph(); }
 
 // =============================================================================
+// LEARNING FUNCTIONS
+// =============================================================================
+
+async function startLearning() {
+    const startBtn = document.getElementById('startLearnBtn');
+    const stopBtn = document.getElementById('stopLearnBtn');
+    const statusDot = document.getElementById('statusDotLearn');
+    const statusText = document.getElementById('learnStatusText');
+    
+    startBtn.disabled = true;
+    startBtn.textContent = '⏳ Starting...';
+    stopBtn.classList.add('visible');
+    statusDot.className = 'status-dot learning';
+    statusText.textContent = 'Connecting...';
+    
+    try {
+        const res = await fetch(`${API_BASE}/learn`, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ count: 50 }) 
+        });
+        
+        if (!res.ok) throw new Error('Failed to start');
+        startBtn.style.display = 'none';
+        
+    } catch (e) {
+        console.error('Learning error:', e);
+        startBtn.disabled = false;
+        startBtn.textContent = '🚀 Start';
+        stopBtn.classList.remove('visible');
+        statusDot.className = 'status-dot';
+        statusText.textContent = 'Failed - check server';
+    }
+}
+
+async function stopLearning() {
+    const stopBtn = document.getElementById('stopLearnBtn');
+    stopBtn.textContent = '⏳ Stopping...';
+    
+    try {
+        await fetch(`${API_BASE}/stop`, { method: 'POST' });
+    } catch (e) {
+        console.error('Stop error:', e);
+    }
+}
+
+function updateLearningUI(data) {
+    const startBtn = document.getElementById('startLearnBtn');
+    const stopBtn = document.getElementById('stopLearnBtn');
+    const statusDot = document.getElementById('statusDotLearn');
+    const statusText = document.getElementById('learnStatusText');
+    const neuralStatus = document.getElementById('neuralTrainingStatus');
+    const neuralText = document.getElementById('neuralStatusText');
+    const articleName = document.getElementById('currentArticle');
+    
+    if (!startBtn || !stopBtn) return;
+    
+    const isLearning = data.isLearning;
+    const currentArticle = data.currentArticle || '';
+    const articlesLearned = data.articlesLearned || 0;
+    const factsSession = data.factsThisSession || 0;
+    
+    // Update counts immediately
+    const articlesEl = document.getElementById('articlesLearned');
+    const factsEl = document.getElementById('factsSession');
+    if (articlesEl) articlesEl.textContent = articlesLearned;
+    if (factsEl) factsEl.textContent = factsSession;
+    
+    // Update article name
+    if (articleName) {
+        articleName.textContent = currentArticle || '';
+        articleName.title = currentArticle; // Tooltip for long names
+    }
+    
+    if (isLearning) {
+        startBtn.style.display = 'none';
+        stopBtn.classList.add('visible');
+        stopBtn.textContent = '⏹️ Stop';
+        
+        // Check for neural training
+        if (currentArticle.includes('Training') || currentArticle.includes('🧠')) {
+            statusDot.className = 'status-dot training';
+            statusText.textContent = 'Training';
+            neuralStatus.classList.add('active');
+            neuralText.textContent = 'now!';
+        } else {
+            statusDot.className = 'status-dot learning';
+            statusText.textContent = 'Learning';
+            neuralStatus.classList.remove('active');
+            const nextTrain = 100 - (articlesLearned % 100);
+            neuralText.textContent = nextTrain <= 20 ? 'soon' : `in ${nextTrain}`;
+        }
+    } else {
+        startBtn.style.display = 'block';
+        startBtn.disabled = false;
+        startBtn.textContent = '🚀 Start';
+        stopBtn.classList.remove('visible');
+        statusDot.className = 'status-dot';
+        statusText.textContent = articlesLearned > 0 ? 'Stopped' : 'Ready';
+        neuralStatus.classList.remove('active');
+        neuralText.textContent = 'every 100';
+    }
+}
+
+// =============================================================================
 // API FUNCTIONS
 // =============================================================================
 
@@ -571,6 +676,9 @@ async function fetchStats() {
         if (data.LossHistory && Array.isArray(data.LossHistory)) {
             stats.lossHistory = data.LossHistory;
         }
+        
+        // Update learning UI
+        updateLearningUI(data);
         
         setStatus('connected', 'Live');
         updateLastUpdated();

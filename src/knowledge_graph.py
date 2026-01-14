@@ -77,19 +77,139 @@ class KnowledgeGraph:
     
     # Patterns for extracting facts from natural language
     EXTRACTION_PATTERNS = [
+        # IDENTITY & CLASSIFICATION
         (r'(\w+)\s+is\s+(?:a|an)\s+(\w+)', "is_a"),
-        (r'(\w+)\s+are\s+(\w+)', "is_a"),
+        (r'(\w+)\s+are\s+(?:a|an)?\s*(\w+)s?', "is_a"),
+        (r'(\w+)\s+was\s+(?:a|an)\s+(\w+)', "is_a"),
+        (r'(\w+)\s+were\s+(\w+)s?', "is_a"),
+        (r'(\w+),?\s+(?:a|an)\s+(\w+),', "is_a"),
+        (r'(\w+)\s+is\s+(?:a\s+)?type\s+of\s+(\w+)', "type_of"),
+        (r'(\w+)\s+is\s+(?:a\s+)?kind\s+of\s+(\w+)', "type_of"),
+        (r'(\w+)\s+is\s+(?:an?\s+)?example\s+of\s+(\w+)', "instance_of"),
+        (r'(\w+)\s+is\s+considered\s+(?:a|an)?\s*(\w+)', "is_a"),
+        (r'(\w+)\s+is\s+classified\s+as\s+(?:a|an)?\s*(\w+)', "classified_as"),
+        
+        # PROPERTIES & ATTRIBUTES
         (r'(\w+)\s+has\s+(?:a|an)?\s*(\w+)', "has"),
-        (r'(\w+)\s+contains?\s+(\w+)', "contains"),
-        (r'(\w+)\s+causes?\s+(\w+)', "causes"),
-        (r'(\w+)\s+leads?\s+to\s+(\w+)', "causes"),
+        (r'(\w+)\s+have\s+(?:a|an)?\s*(\w+)', "has"),
+        (r'(\w+)\s+had\s+(?:a|an)?\s*(\w+)', "has"),
+        (r'(\w+)\s+(?:is|are)\s+known\s+for\s+(?:its?\s+)?(\w+)', "known_for"),
+        (r'(\w+)\s+(?:is|are)\s+famous\s+for\s+(\w+)', "famous_for"),
+        (r'(\w+)\s+features?\s+(\w+)', "has_feature"),
+        (r'(\w+)\s+possesses?\s+(\w+)', "possesses"),
+        (r'(\w+)\s+exhibits?\s+(\w+)', "exhibits"),
+        
+        # SPATIAL RELATIONS
         (r'(\w+)\s+is\s+(?:located\s+)?in\s+(\w+)', "located_in"),
-        (r'(\w+)\s+was\s+created\s+by\s+(\w+)', "created_by"),
-        (r'(\w+)\s+invented\s+(\w+)', "created_by"),
-        (r'(\w+)\s+is\s+part\s+of\s+(\w+)', "part_of"),
-        (r'(\w+)\s+belongs?\s+to\s+(\w+)', "part_of"),
-        (r'(\w+)\s+needs?\s+(\w+)', "needs"),
+        (r'(\w+)\s+(?:is|are)\s+found\s+in\s+(\w+)', "found_in"),
+        (r'(\w+)\s+lives?\s+in\s+(\w+)', "lives_in"),
+        (r'(\w+)\s+lived\s+in\s+(\w+)', "lived_in"),
+        (r'(\w+)\s+(?:is|are)\s+native\s+to\s+(\w+)', "native_to"),
+        (r'(\w+)\s+comes?\s+from\s+(\w+)', "comes_from"),
+        (r'(\w+)\s+(?:is|are)\s+near\s+(\w+)', "near"),
+        (r'(\w+)\s+borders?\s+(\w+)', "borders"),
+        (r'(\w+)\s+flows?\s+through\s+(\w+)', "flows_through"),
+        (r'(\w+)\s+flows?\s+into\s+(\w+)', "flows_into"),
+        (r'(\w+)\s+(?:is|are)\s+(?:the\s+)?capital\s+of\s+(\w+)', "capital_of"),
+        
+        # TEMPORAL RELATIONS
+        (r'(\w+)\s+was\s+born\s+in\s+(\w+)', "born_in"),
+        (r'(\w+)\s+died\s+in\s+(\w+)', "died_in"),
+        (r'(\w+)\s+was\s+founded\s+in\s+(\w+)', "founded_in"),
+        (r'(\w+)\s+(?:was\s+)?established\s+in\s+(\w+)', "established_in"),
+        (r'(\w+)\s+(?:was\s+)?created\s+in\s+(\w+)', "created_in"),
+        (r'(\w+)\s+started\s+in\s+(\w+)', "started_in"),
+        (r'(\w+)\s+ended\s+in\s+(\w+)', "ended_in"),
+        (r'(\w+)\s+occurred\s+in\s+(\w+)', "occurred_in"),
+        (r'(\w+)\s+began\s+in\s+(\w+)', "began_in"),
+        (r'(\w+)\s+preceded\s+(\w+)', "preceded"),
+        (r'(\w+)\s+followed\s+(\w+)', "followed"),
+        
+        # SOCIAL RELATIONS
+        (r'(\w+)\s+works?\s+(?:for|at)\s+(\w+)', "works_for"),
+        (r'(\w+)\s+worked\s+(?:for|at)\s+(\w+)', "worked_for"),
+        (r'(\w+)\s+(?:is|was)\s+(?:the\s+)?(?:CEO|president|founder|leader)\s+of\s+(\w+)', "leads"),
+        (r'(\w+)\s+(?:is|was)\s+married\s+to\s+(\w+)', "married_to"),
+        (r'(\w+)\s+(?:is|was)\s+(?:the\s+)?(?:son|daughter|child)\s+of\s+(\w+)', "child_of"),
+        (r'(\w+)\s+(?:is|was)\s+(?:the\s+)?(?:father|mother|parent)\s+of\s+(\w+)', "parent_of"),
+        (r'(\w+)\s+(?:is|was)\s+(?:a\s+)?student\s+of\s+(\w+)', "student_of"),
+        (r'(\w+)\s+taught\s+(\w+)', "taught"),
+        (r'(\w+)\s+influenced\s+(\w+)', "influenced"),
+        (r'(\w+)\s+inspired\s+(\w+)', "inspired"),
+        
+        # CREATION & PRODUCTION
+        (r'(\w+)\s+(?:was\s+)?created\s+by\s+(\w+)', "created_by"),
+        (r'(\w+)\s+(?:was\s+)?invented\s+by\s+(\w+)', "invented_by"),
+        (r'(\w+)\s+invented\s+(?:the\s+)?(\w+)', "invented"),
+        (r'(\w+)\s+(?:was\s+)?discovered\s+by\s+(\w+)', "discovered_by"),
+        (r'(\w+)\s+discovered\s+(\w+)', "discovered"),
+        (r'(\w+)\s+(?:was\s+)?designed\s+by\s+(\w+)', "designed_by"),
+        (r'(\w+)\s+(?:was\s+)?built\s+by\s+(\w+)', "built_by"),
+        (r'(\w+)\s+built\s+(\w+)', "built"),
+        (r'(\w+)\s+(?:was\s+)?written\s+by\s+(\w+)', "written_by"),
+        (r'(\w+)\s+wrote\s+(\w+)', "wrote"),
+        (r'(\w+)\s+(?:was\s+)?founded\s+by\s+(\w+)', "founded_by"),
+        (r'(\w+)\s+founded\s+(\w+)', "founded"),
+        (r'(\w+)\s+(?:was\s+)?developed\s+by\s+(\w+)', "developed_by"),
+        (r'(\w+)\s+developed\s+(\w+)', "developed"),
         (r'(\w+)\s+produces?\s+(\w+)', "produces"),
+        (r'(\w+)\s+manufactures?\s+(\w+)', "manufactures"),
+        
+        # CAUSATION & EFFECTS
+        (r'(\w+)\s+causes?\s+(\w+)', "causes"),
+        (r'(\w+)\s+caused\s+(\w+)', "caused"),
+        (r'(\w+)\s+leads?\s+to\s+(\w+)', "leads_to"),
+        (r'(\w+)\s+led\s+to\s+(\w+)', "led_to"),
+        (r'(\w+)\s+results?\s+in\s+(\w+)', "results_in"),
+        (r'(\w+)\s+(?:was\s+)?caused\s+by\s+(\w+)', "caused_by"),
+        (r'(\w+)\s+prevents?\s+(\w+)', "prevents"),
+        (r'(\w+)\s+affects?\s+(\w+)', "affects"),
+        (r'(\w+)\s+triggers?\s+(\w+)', "triggers"),
+        (r'(\w+)\s+enables?\s+(\w+)', "enables"),
+        (r'(\w+)\s+requires?\s+(\w+)', "requires"),
+        (r'(\w+)\s+depends?\s+on\s+(\w+)', "depends_on"),
+        (r'(\w+)\s+needs?\s+(\w+)', "needs"),
+        
+        # PART-WHOLE RELATIONS
+        (r'(\w+)\s+is\s+(?:a\s+)?part\s+of\s+(\w+)', "part_of"),
+        (r'(\w+)\s+(?:is|are)\s+(?:a\s+)?component\s+of\s+(\w+)', "component_of"),
+        (r'(\w+)\s+(?:is|are)\s+(?:a\s+)?member\s+of\s+(\w+)', "member_of"),
+        (r'(\w+)\s+belongs?\s+to\s+(\w+)', "belongs_to"),
+        (r'(\w+)\s+contains?\s+(\w+)', "contains"),
+        (r'(\w+)\s+includes?\s+(\w+)', "includes"),
+        (r'(\w+)\s+consists?\s+of\s+(\w+)', "consists_of"),
+        (r'(\w+)\s+(?:is|are)\s+made\s+(?:of|from)\s+(\w+)', "made_of"),
+        
+        # ACTIONS & EVENTS
+        (r'(\w+)\s+performs?\s+(\w+)', "performs"),
+        (r'(\w+)\s+participates?\s+in\s+(\w+)', "participates_in"),
+        (r'(\w+)\s+wins?\s+(\w+)', "wins"),
+        (r'(\w+)\s+won\s+(?:the\s+)?(\w+)', "won"),
+        (r'(\w+)\s+plays?\s+(\w+)', "plays"),
+        (r'(\w+)\s+uses?\s+(\w+)', "uses"),
+        (r'(\w+)\s+used\s+(\w+)', "used"),
+        (r'(\w+)\s+supports?\s+(\w+)', "supports"),
+        (r'(\w+)\s+opposes?\s+(\w+)', "opposes"),
+        (r'(\w+)\s+defeated\s+(\w+)', "defeated"),
+        
+        # SIMILARITY & COMPARISON
+        (r'(\w+)\s+(?:is|are)\s+similar\s+to\s+(\w+)', "similar_to"),
+        (r'(\w+)\s+(?:is|are)\s+different\s+from\s+(\w+)', "different_from"),
+        (r'(\w+)\s+(?:is|are)\s+(?:also\s+)?(?:called|known\s+as)\s+(\w+)', "also_known_as"),
+        (r'(\w+)\s+resembles?\s+(\w+)', "resembles"),
+        
+        # SCIENTIFIC
+        (r'(\w+)\s+studies?\s+(\w+)', "studies"),
+        (r'(\w+)\s+researches?\s+(\w+)', "researches"),
+        (r'(\w+)\s+proves?\s+(\w+)', "proves"),
+        (r'(\w+)\s+demonstrates?\s+(\w+)', "demonstrates"),
+        (r'(\w+)\s+explains?\s+(\w+)', "explains"),
+        
+        # COMMUNICATION
+        (r'(\w+)\s+means?\s+(\w+)', "means"),
+        (r'(\w+)\s+represents?\s+(\w+)', "represents"),
+        (r'(\w+)\s+symbolizes?\s+(\w+)', "symbolizes"),
+        (r'(\w+)\s+describes?\s+(\w+)', "describes"),
     ]
     
     def __init__(self, DbPath: Optional[str] = None):

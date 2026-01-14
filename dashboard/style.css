@@ -309,36 +309,131 @@ body {
 
 .neural-metrics strong { color: var(--accent); font-size: 1rem; }
 
-/* Quick Actions */
-.panel-actions { display: flex; flex-direction: column; }
-
-.action-buttons {
-    display: flex;
+/* Learning Center Panel - Compact */
+.panel-learning { 
+    display: flex; 
     flex-direction: column;
-    gap: 8px;
-    flex: 1;
+    gap: 10px;
 }
 
-.action-btn {
+.learning-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 12px;
-    padding: 12px 14px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
+}
+
+.learning-header h2 {
+    margin: 0;
+}
+
+.learn-controls {
+    display: flex;
+    gap: 6px;
+}
+
+.learn-btn-main {
+    padding: 8px 14px;
+    background: linear-gradient(135deg, #17bf63, #1d9bf0);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
-    text-align: left;
 }
 
-.action-btn:hover {
-    border-color: var(--accent);
-    transform: translateX(4px);
+.learn-btn-main:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 10px rgba(23, 191, 99, 0.4);
 }
 
-.action-icon { font-size: 1.3rem; }
-.action-label { font-size: 0.95rem; font-weight: 600; color: var(--text); }
+.learn-btn-main:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.stop-btn-main {
+    display: none;
+    padding: 8px 14px;
+    background: #e0245e;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.stop-btn-main:hover { background: #c9203f; }
+.stop-btn-main.visible { display: block; }
+
+/* Compact Status Line */
+.learn-status-compact {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    flex-wrap: wrap;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text2);
+    flex-shrink: 0;
+}
+
+.status-dot.learning {
+    background: #17bf63;
+    animation: pulse 1s infinite;
+}
+
+.status-dot.training {
+    background: #f97316;
+    animation: pulse 0.5s infinite;
+}
+
+#learnStatusText {
+    font-weight: 600;
+    min-width: 60px;
+}
+
+.article-name {
+    color: var(--accent);
+    font-weight: 500;
+    font-size: 0.85rem;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+/* Stats Row */
+.learn-stats-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--text2);
+}
+
+.learn-stats-row strong {
+    color: var(--accent);
+}
+
+.neural-hint {
+    opacity: 0.7;
+}
+
+.neural-hint.active {
+    opacity: 1;
+    color: #f97316;
+}
 
 /* Milestones */
 .mini-timeline { flex: 1; overflow-y: auto; }

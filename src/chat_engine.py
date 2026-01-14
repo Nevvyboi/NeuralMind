@@ -28,6 +28,14 @@ from .metacognition import MetacognitiveController, MetacognitiveState
 from .reasoning import ChainOfThoughtReasoner, ReasoningStep
 from .constitutional import Constitution
 
+# Try to import NeuralEngine for TransE embeddings
+try:
+    from .neural_engine import NeuralEngine
+    NEURAL_ENGINE_AVAILABLE = True
+except ImportError:
+    NEURAL_ENGINE_AVAILABLE = False
+    NeuralEngine = None
+
 
 @dataclass
 class ChatResponse:
@@ -73,6 +81,15 @@ class SmartChatEngine:
         self.QuestionDetector = QuestionTypeDetector()
         self.Metacognition = MetacognitiveController()
         self.Reasoner = ChainOfThoughtReasoner(self.Knowledge, self.Causal)
+        
+        # Initialize NeuralEngine for TransE embeddings (used by neural pipeline)
+        self.NeuralEngine = None
+        if NEURAL_ENGINE_AVAILABLE:
+            self.NeuralEngine = NeuralEngine(EmbeddingDim=100)
+            # Load existing triples into neural engine
+            if self.Knowledge and hasattr(self.Knowledge, 'AllTriples'):
+                for subj, pred, obj in self.Knowledge.AllTriples:
+                    self.NeuralEngine.AddTriple(subj, pred, obj)
         
         # Conversation history
         self.History: List[Dict] = []
@@ -350,6 +367,9 @@ class SmartChatEngine:
         for T in Triples:
             if self.Knowledge.Add(T.Subject, T.Predicate, T.Object):
                 Results["Facts"] += 1
+                # Also add to neural engine for embeddings
+                if self.NeuralEngine:
+                    self.NeuralEngine.AddTriple(T.Subject, T.Predicate, T.Object)
         
         # Extract causal relations
         Results["CausalRelations"] = self.Causal.LearnFromText(Text)

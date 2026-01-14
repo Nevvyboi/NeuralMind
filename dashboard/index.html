@@ -99,21 +99,31 @@
                 </div>
             </div>
 
-            <div class="panel panel-actions">
-                <h2>⚙️ Quick Actions</h2>
-                <div class="action-buttons">
-                    <button class="action-btn" onclick="openModal('detection')">
-                        <span class="action-icon">🎯</span>
-                        <span class="action-label">Detection</span>
-                    </button>
-                    <button class="action-btn" onclick="openModal('ai-caps')">
-                        <span class="action-icon">✨</span>
-                        <span class="action-label">AI Capabilities</span>
-                    </button>
-                    <button class="action-btn" onclick="openModal('pipeline')">
-                        <span class="action-icon">🔄</span>
-                        <span class="action-label">Pipeline</span>
-                    </button>
+            <div class="panel panel-learning">
+                <div class="learning-header">
+                    <h2>📚 Learning Center</h2>
+                    <div class="learn-controls">
+                        <button class="learn-btn-main" id="startLearnBtn" onclick="startLearning()">
+                            🚀 Start
+                        </button>
+                        <button class="stop-btn-main" id="stopLearnBtn" onclick="stopLearning()">
+                            ⏹️ Stop
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Compact Status -->
+                <div class="learn-status-compact">
+                    <span class="status-dot" id="statusDotLearn"></span>
+                    <span id="learnStatusText">Ready</span>
+                    <span class="article-name" id="currentArticle"></span>
+                </div>
+                
+                <!-- Stats Row -->
+                <div class="learn-stats-row">
+                    <span>📖 <strong id="articlesLearned">0</strong> articles</span>
+                    <span>💡 <strong id="factsSession">0</strong> facts</span>
+                    <span class="neural-hint" id="neuralTrainingStatus">🧠 <span id="neuralStatusText">every 100</span></span>
                 </div>
             </div>
 
