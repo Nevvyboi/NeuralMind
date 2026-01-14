@@ -358,6 +358,16 @@ class KnowledgeGraph:
         
         return Extracted
     
+    @property
+    def Triples(self) -> Set[Tuple[str, str, str]]:
+        """Alias for AllTriples (backwards compatibility)"""
+        return self.AllTriples
+    
+    @property
+    def Triples(self) -> Set[Tuple[str, str, str]]:
+        """Alias for AllTriples (backwards compatibility)"""
+        return self.AllTriples
+    
     def Size(self) -> int:
         """Get total number of facts"""
         return len(self.AllTriples)

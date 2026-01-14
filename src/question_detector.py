@@ -252,3 +252,6 @@ class QuestionTypeDetector:
             QuestionType.UNKNOWN: "Unknown question type",
         }
         return Descriptions.get(QType, "Unknown")
+
+# Alias for main.py compatibility
+QuestionDetector = QuestionTypeDetector

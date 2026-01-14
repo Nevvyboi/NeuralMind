@@ -212,3 +212,6 @@ class Constitution:
                 Lines.append(f"      ⚠ {Issue}")
         
         return "\n".join(Lines)
+
+# Alias for main.py compatibility
+ConstitutionalAI = Constitution

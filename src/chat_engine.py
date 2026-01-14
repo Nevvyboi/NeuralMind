@@ -53,19 +53,22 @@ class SmartChatEngine:
     6. PERSISTS both facts and causal relations!
     """
     
-    def __init__(self, DataDir: str = "./data"):
+    def __init__(self, Knowledge: 'KnowledgeGraph' = None, 
+                 Causal: 'CausalGraph' = None, DataDir: str = "./data"):
         """
         Initialize chat engine.
         
         Args:
+            Knowledge: KnowledgeGraph instance (optional, creates new if None)
+            Causal: CausalGraph instance (optional, creates new if None)
             DataDir: Directory for data storage
         """
         self.DataDir = Path(DataDir)
         self.DataDir.mkdir(parents=True, exist_ok=True)
         
-        # Initialize components - BOTH are now persistent!
-        self.Knowledge = KnowledgeGraph(str(self.DataDir / "knowledge.db"))
-        self.Causal = CausalGraph(str(self.DataDir))  # ← NOW PERSISTENT!
+        # Use provided instances or create new ones
+        self.Knowledge = Knowledge if Knowledge else KnowledgeGraph(str(self.DataDir / "knowledge.db"))
+        self.Causal = Causal if Causal else CausalGraph(str(self.DataDir))
         
         self.QuestionDetector = QuestionTypeDetector()
         self.Metacognition = MetacognitiveController()

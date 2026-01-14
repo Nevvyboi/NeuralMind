@@ -403,3 +403,5 @@ def QuickLearn(Engine, Topics: List[str] = None, Count: int = 10):
         Learner.LearnRandom(Count)
     
     return Learner.GetStats()
+# Alias for main.py compatibility
+WikipediaLearner = AutoLearner

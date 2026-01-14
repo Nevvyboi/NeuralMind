@@ -82,13 +82,13 @@ class ProgressTracker:
         },
     ]
     
-    def __init__(self, Knowledge: 'KnowledgeGraph', Causal: 'CausalGraph'):
+    def __init__(self, Knowledge: 'KnowledgeGraph' = None, Causal: 'CausalGraph' = None):
         """
         Initialize tracker.
         
         Args:
-            Knowledge: Knowledge graph to track
-            Causal: Causal graph to track
+            Knowledge: Knowledge graph to track (optional)
+            Causal: Causal graph to track (optional)
         """
         self.Knowledge = Knowledge
         self.Causal = Causal

@@ -250,3 +250,7 @@ class ChainOfThoughtReasoner:
         if not Steps:
             return 0.5
         return sum(S.Confidence for S in Steps) / len(Steps)
+
+
+# Alias for backwards compatibility with main.py imports
+ChainOfThought = ChainOfThoughtReasoner

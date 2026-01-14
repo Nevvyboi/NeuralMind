@@ -239,3 +239,6 @@ class MetacognitiveController:
         """Reset state for new question"""
         self.State = MetacognitiveState()
         self.ReasoningHistory = []
+
+# Alias for main.py compatibility
+MetacognitionEngine = MetacognitiveController
