@@ -1,0 +1,91 @@
+# ============================================================================
+# GROUNDZERO AI - CONFIGURATION
+# ============================================================================
+
+# Model Configuration
+model:
+  name: "GroundZero-AI"
+  version: "1.0.0"
+  base_model: "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+  local_path: "data/models/groundzero"
+  max_seq_length: 4096
+  device: "auto"  # auto, cuda, cpu
+  quantization: "4bit"  # none, 4bit, 8bit
+  
+# Training Configuration  
+training:
+  learning_rate: 2.0e-5
+  batch_size: 4
+  gradient_accumulation_steps: 4
+  max_epochs: 3
+  warmup_ratio: 0.1
+  weight_decay: 0.01
+  lora_r: 64
+  lora_alpha: 128
+  lora_dropout: 0.05
+  
+# Knowledge Graph Configuration
+knowledge:
+  graph_path: "data/knowledge/knowledge_graph.json"
+  embeddings_path: "data/embeddings/knowledge_embeddings.npy"
+  min_confidence: 0.7
+  max_nodes: 1000000
+  auto_verify: true
+  connect_threshold: 0.8
+  
+# Memory Configuration
+memory:
+  conversation_limit: 10000
+  user_profile_path: "data/users"
+  long_term_path: "data/memory/long_term.json"
+  working_memory_size: 20
+  episodic_memory_size: 1000
+  semantic_memory_size: 100000
+  
+# Search Configuration
+search:
+  engines:
+    - duckduckgo
+    - wikipedia
+    - arxiv
+  max_results: 10
+  cache_duration_hours: 24
+  verify_sources: true
+  min_source_reliability: 0.6
+  
+# Continuous Learning
+continuous_learning:
+  enabled: true
+  learning_queue_path: "data/training/learning_queue.json"
+  auto_evolve_threshold: 100  # Items before auto-evolution
+  feedback_learning: true
+  correction_learning: true
+  web_learning: true
+  
+# Dashboard Configuration
+dashboard:
+  host: "0.0.0.0"
+  port: 8080
+  debug: false
+  secret_key: "change-this-in-production"
+  
+# Logging Configuration
+logging:
+  level: "INFO"
+  path: "logs/groundzero.log"
+  max_size_mb: 100
+  backup_count: 5
+
+# Paths (relative to project root)
+paths:
+  data: "data"
+  models: "data/models"
+  knowledge: "data/knowledge"
+  memory: "data/memory"
+  training: "data/training"
+  cache: "data/cache"
+  embeddings: "data/embeddings"
+  checkpoints: "data/checkpoints"
+  users: "data/users"
+  conversations: "data/conversations"
+  logs: "logs"

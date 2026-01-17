@@ -1,0 +1,61 @@
+# GroundZero AI - Requirements
+# ============================
+
+# Core
+pyyaml>=6.0
+numpy>=1.21.0
+
+# Dashboard
+flask>=2.3.0
+flask-cors>=4.0.0
+
+# Web Search
+duckduckgo-search>=4.0.0
+wikipedia>=1.4.0
+arxiv>=2.0.0
+requests>=2.28.0
+
+# ============================================
+# DOCUMENT PROCESSING (Read ANY file type)
+# ============================================
+
+# Data & Spreadsheets
+pandas>=2.0.0
+openpyxl>=3.1.0              # Excel (.xlsx) read/write
+
+# PDF Processing
+PyMuPDF>=1.23.0              # Best PDF reader (fitz)
+pdfplumber>=0.10.0           # PDF table extraction
+
+# Word Documents
+python-docx>=0.8.11          # Word (.docx) read/write
+
+# Images
+Pillow>=10.0.0               # Image processing
+
+# ============================================
+# FILE CREATION
+# ============================================
+
+# PDF Creation
+reportlab>=4.0.0
+
+# PowerPoint
+python-pptx>=0.6.21
+
+# ============================================
+# DATA ANALYSIS & VISUALIZATION
+# ============================================
+
+matplotlib>=3.7.0
+
+# ============================================
+# GPU/Training (Uncomment if you have GPU)
+# ============================================
+# torch>=2.0.0
+# transformers>=4.35.0
+# accelerate>=0.24.0
+# bitsandbytes>=0.41.0
+# peft>=0.6.0
+# trl>=0.7.0
+# datasets>=2.14.0

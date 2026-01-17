@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GroundZero AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">🧠</span>
+                    <span class="logo-text">GroundZero AI</span>
+                </div>
+            </div>
+            
+            <button class="new-chat-btn" onclick="newChat()">
+                <span>+</span> New Chat
+            </button>
+            
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-section="chat" onclick="showSection('chat')">
+                    <span class="nav-icon">💬</span>
+                    <span>Chat</span>
+                </a>
+                <a href="#" class="nav-item" data-section="files" onclick="showSection('files')">
+                    <span class="nav-icon">📁</span>
+                    <span>Files & Tools</span>
+                </a>
+                <a href="#" class="nav-item" data-section="code" onclick="showSection('code')">
+                    <span class="nav-icon">💻</span>
+                    <span>Code</span>
+                </a>
+                <a href="#" class="nav-item" data-section="history" onclick="showSection('history')">
+                    <span class="nav-icon">📜</span>
+                    <span>History</span>
+                </a>
+                <a href="#" class="nav-item" data-section="knowledge" onclick="showSection('knowledge')">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Knowledge</span>
+                </a>
+                <a href="#" class="nav-item" data-section="stats" onclick="showSection('stats')">
+                    <span class="nav-icon">📊</span>
+                    <span>Stats</span>
+                </a>
+                <a href="#" class="nav-item" data-section="settings" onclick="showSection('settings')">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Settings</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <span class="user-avatar">👤</span>
+                    <span class="user-name" id="userName">User</span>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Chat Section -->
+            <section id="chat-section" class="section active">
+                <div class="chat-header">
+                    <h1>GroundZero AI</h1>
+                    <p>Your personal AI assistant with continuous learning</p>
+                </div>
+                
+                <div class="messages-container" id="messagesContainer">
+                    <div class="welcome-message">
+                        <h2>Welcome to GroundZero AI! 🧠</h2>
+                        <p>I'm your personal AI assistant that learns and grows with you.</p>
+                        <div class="capabilities">
+                            <div class="capability">
+                                <span>💬</span>
+                                <span>Chat & Learn</span>
+                            </div>
+                            <div class="capability">
+                                <span>📄</span>
+                                <span>Read Documents</span>
+                            </div>
+                            <div class="capability">
+                                <span>💻</span>
+                                <span>Run Code</span>
+                            </div>
+                            <div class="capability">
+                                <span>📝</span>
+                                <span>Create Files</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="input-container">
+                    <div class="input-actions">
+                        <button class="input-action-btn" onclick="document.getElementById('fileUpload').click()" title="Upload file">
+                            📎
+                        </button>
+                        <input type="file" id="fileUpload" style="display:none" onchange="uploadFile(this.files[0])" 
+                               accept=".pdf,.xlsx,.xls,.csv,.docx,.doc,.txt,.json,.md,.py">
+                    </div>
+                    <textarea 
+                        id="messageInput" 
+                        placeholder="Type a message... (or upload a file to analyze)"
+                        rows="1"
+                        onkeydown="handleKeyDown(event)"
+                        oninput="autoResize(this)"
+                    ></textarea>
+                    <button class="send-btn" onclick="sendMessage()" id="sendBtn">
+                        <span>➤</span>
+                    </button>
+                </div>
+            </section>
+            
+            <!-- Files Section -->
+            <section id="files-section" class="section">
+                <div class="section-header">
+                    <h2>📁 Files & Tools</h2>
+                    <p>Upload documents to analyze or create new files</p>
+                </div>
+                
+                <div class="tools-grid">
+                    <!-- Upload Area -->
+                    <div class="tool-card">
+                        <h3>📤 Upload Document</h3>
+                        <p>Upload PDF, Excel, Word, CSV to analyze</p>
+                        <div class="upload-area" id="uploadArea" 
+                             ondrop="handleDrop(event)" 
+                             ondragover="handleDragOver(event)"
+                             ondragleave="handleDragLeave(event)">
+                            <span class="upload-icon">📁</span>
+                            <p>Drag & drop files here</p>
+                            <p class="upload-hint">or click to browse</p>
+                            <input type="file" id="fileUpload2" onchange="uploadFile(this.files[0])"
+                                   accept=".pdf,.xlsx,.xls,.csv,.docx,.doc,.txt,.json,.md,.py" multiple>
+                        </div>
+                    </div>
+                    
+                    <!-- Loaded Documents -->
+                    <div class="tool-card">
+                        <h3>📄 Loaded Documents</h3>
+                        <p>Documents ready for Q&A</p>
+                        <div class="documents-list" id="documentsList">
+                            <p class="empty-state">No documents loaded yet</p>
+                        </div>
+                        <div class="doc-qa-input" style="margin-top: 10px;">
+                            <input type="text" id="docQuestion" placeholder="Ask about your documents...">
+                            <button onclick="askDocuments()">Ask</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Create File -->
+                    <div class="tool-card">
+                        <h3>📝 Create File</h3>
+                        <p>Generate Excel, Word, PDF, PowerPoint</p>
+                        <div class="create-file-form">
+                            <select id="createFileType">
+                                <option value="xlsx">Excel (.xlsx)</option>
+                                <option value="docx">Word (.docx)</option>
+                                <option value="pdf">PDF (.pdf)</option>
+                                <option value="pptx">PowerPoint (.pptx)</option>
+                                <option value="csv">CSV (.csv)</option>
+                                <option value="txt">Text (.txt)</option>
+                            </select>
+                            <input type="text" id="createFileName" placeholder="filename">
+                            <textarea id="createFileContent" placeholder="Content or data (JSON for Excel/PPT)"></textarea>
+                            <button onclick="createFile()">Create File</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Created Files -->
+                    <div class="tool-card">
+                        <h3>📦 Created Files</h3>
+                        <p>Download your generated files</p>
+                        <div class="files-list" id="createdFilesList">
+                            <p class="empty-state">No files created yet</p>
+                        </div>
+                        <button onclick="refreshFiles()" class="refresh-btn">Refresh List</button>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Code Section -->
+            <section id="code-section" class="section">
+                <div class="section-header">
+                    <h2>💻 Code Execution</h2>
+                    <p>Run Python or Bash code</p>
+                </div>
+                
+                <div class="code-container">
+                    <div class="code-toolbar">
+                        <select id="codeLanguage">
+                            <option value="python">Python</option>
+                            <option value="bash">Bash</option>
+                        </select>
+                        <button onclick="runCode()" class="run-btn">▶ Run</button>
+                        <button onclick="clearCode()" class="clear-btn">Clear</button>
+                    </div>
+                    <textarea id="codeInput" class="code-editor" placeholder="# Write your code here
+import pandas as pd
+
+# Example: Create a simple analysis
+data = {'Name': ['Alice', 'Bob'], 'Score': [95, 87]}
+df = pd.DataFrame(data)
+print(df)
+print(f'Average score: {df[&quot;Score&quot;].mean()}')"># Write your code here
+import pandas as pd
+
+# Example: Create a simple analysis
+data = {'Name': ['Alice', 'Bob'], 'Score': [95, 87]}
+df = pd.DataFrame(data)
+print(df)
+print(f'Average score: {df["Score"].mean()}')</textarea>
+                    
+                    <div class="code-output-container">
+                        <h4>Output:</h4>
+                        <pre id="codeOutput" class="code-output">Run code to see output...</pre>
+                    </div>
+                    
+                    <div class="package-installer">
+                        <h4>Install Package:</h4>
+                        <div class="install-form">
+                            <input type="text" id="packageName" placeholder="package name (e.g., seaborn)">
+                            <button onclick="installPackage()">Install</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- History Section -->
+            <section id="history-section" class="section">
+                <div class="section-header">
+                    <h2>📜 Conversation History</h2>
+                </div>
+                <div id="historyContent" class="history-list">
+                    <p class="empty-state">No conversation history yet</p>
+                </div>
+            </section>
+            
+            <!-- Knowledge Section -->
+            <section id="knowledge-section" class="section">
+                <div class="section-header">
+                    <h2>⚙️ Knowledge Graph</h2>
+                    <p>What GroundZero knows</p>
+                </div>
+                
+                <div class="knowledge-tools">
+                    <div class="search-box">
+                        <input type="text" id="knowledgeSearch" placeholder="Search knowledge...">
+                        <button onclick="searchKnowledge()">Search</button>
+                    </div>
+                    
+                    <div class="teach-box">
+                        <h4>Teach New Knowledge:</h4>
+                        <input type="text" id="teachSubject" placeholder="Subject">
+                        <textarea id="teachContent" placeholder="Content/Facts to teach"></textarea>
+                        <button onclick="teachKnowledge()">Teach</button>
+                    </div>
+                </div>
+                
+                <div id="knowledgeContent" class="knowledge-results">
+                    <p class="empty-state">Search or browse knowledge</p>
+                </div>
+            </section>
+            
+            <!-- Stats Section -->
+            <section id="stats-section" class="section">
+                <div class="section-header">
+                    <h2>📊 System Stats</h2>
+                </div>
+                <div id="statsContent" class="stats-grid">
+                    <!-- Stats will be loaded here -->
+                </div>
+            </section>
+            
+            <!-- Settings Section -->
+            <section id="settings-section" class="section">
+                <div class="section-header">
+                    <h2>⚙️ Settings</h2>
+                </div>
+                <div class="settings-form">
+                    <div class="setting-item">
+                        <label>Your Name:</label>
+                        <input type="text" id="settingsName" placeholder="Enter your name">
+                        <button onclick="saveName()">Save</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <!-- Reasoning Panel (slides in from right) -->
+        <aside class="reasoning-panel" id="reasoningPanel">
+            <div class="reasoning-header">
+                <h3>🧠 Reasoning</h3>
+                <button onclick="closeReasoning()" class="close-btn">×</button>
+            </div>
+            <div class="reasoning-content" id="reasoningContent">
+                <!-- Reasoning steps will be shown here -->
+            </div>
+        </aside>
+    </div>
+    
+    <!-- Toast notification -->
+    <div id="toast" class="toast"></div>
+    
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

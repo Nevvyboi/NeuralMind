@@ -1,0 +1,467 @@
+2026-01-17 11:12:24,731 | groundzero | INFO | __init__.py:137 | Loaded 0 user profiles
+2026-01-17 11:12:24,732 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 11:12:25,096 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 11:12:25,097 | groundzero | INFO | groundzero.py:89 | Using mock model (no GPU required)
+2026-01-17 11:12:25,097 | groundzero | INFO | groundzero.py:100 | Knowledge graph: 0 nodes
+2026-01-17 11:12:25,109 | groundzero | INFO | __init__.py:137 | Loaded 1 user profiles
+2026-01-17 11:12:25,109 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 11:12:25,113 | groundzero | INFO | groundzero.py:106 | Memory system initialized
+2026-01-17 11:12:25,114 | groundzero | INFO | groundzero.py:111 | Web search initialized
+2026-01-17 11:12:25,115 | groundzero | INFO | groundzero.py:121 | Reasoning engine initialized
+2026-01-17 11:12:25,137 | groundzero | INFO | groundzero.py:137 | Continuous learning initialized
+2026-01-17 11:12:38,843 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\User\Coding\GroundZero\data\workspace)
+2026-01-17 11:12:38,844 | groundzero | INFO | groundzero.py:144 | Tools initialized (code execution, documents, files)
+2026-01-17 11:12:38,927 | groundzero | INFO | __init__.py:222 | Saved knowledge graph: 1 nodes, 0 edges
+2026-01-17 11:12:38,927 | groundzero | INFO | groundzero.py:298 | Learned about: Test Topic
+2026-01-17 11:12:46,346 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 11:12:46,348 | groundzero | INFO | groundzero.py:89 | Using mock model (no GPU required)
+2026-01-17 11:12:46,349 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 11:12:46,349 | groundzero | INFO | groundzero.py:100 | Knowledge graph: 1 nodes
+2026-01-17 11:12:46,372 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 11:12:46,373 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 11:12:46,374 | groundzero | INFO | groundzero.py:106 | Memory system initialized
+2026-01-17 11:12:46,375 | groundzero | INFO | groundzero.py:111 | Web search initialized
+2026-01-17 11:12:46,376 | groundzero | INFO | groundzero.py:121 | Reasoning engine initialized
+2026-01-17 11:12:46,386 | groundzero | INFO | groundzero.py:137 | Continuous learning initialized
+2026-01-17 11:12:46,886 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\User\Coding\GroundZero\data\workspace)
+2026-01-17 11:12:46,887 | groundzero | INFO | groundzero.py:144 | Tools initialized (code execution, documents, files)
+2026-01-17 11:12:49,432 | groundzero | INFO | __init__.py:123 | Starting GroundZero Dashboard at http://0.0.0.0:8080
+2026-01-17 11:13:45,641 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 11:13:45,645 | groundzero | INFO | groundzero.py:89 | Using mock model (no GPU required)
+2026-01-17 11:13:45,645 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 11:13:45,650 | groundzero | INFO | groundzero.py:100 | Knowledge graph: 1 nodes
+2026-01-17 11:13:45,653 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 11:13:45,654 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 11:13:45,655 | groundzero | INFO | groundzero.py:106 | Memory system initialized
+2026-01-17 11:13:45,656 | groundzero | INFO | groundzero.py:111 | Web search initialized
+2026-01-17 11:13:45,656 | groundzero | INFO | groundzero.py:121 | Reasoning engine initialized
+2026-01-17 11:13:45,658 | groundzero | INFO | groundzero.py:137 | Continuous learning initialized
+2026-01-17 11:13:46,255 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\User\Coding\GroundZero\data\workspace)
+2026-01-17 11:13:46,255 | groundzero | INFO | groundzero.py:144 | Tools initialized (code execution, documents, files)
+2026-01-17 11:13:46,485 | groundzero | INFO | __init__.py:123 | Starting GroundZero Dashboard at http://0.0.0.0:8080
+2026-01-17 11:16:02,519 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 11:16:02,519 | groundzero | INFO | groundzero.py:89 | Using mock model (no GPU required)
+2026-01-17 11:16:02,519 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 11:16:02,519 | groundzero | INFO | groundzero.py:100 | Knowledge graph: 1 nodes
+2026-01-17 11:16:02,519 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 11:16:02,519 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 11:16:02,527 | groundzero | INFO | groundzero.py:106 | Memory system initialized
+2026-01-17 11:16:02,528 | groundzero | INFO | groundzero.py:111 | Web search initialized
+2026-01-17 11:16:02,528 | groundzero | INFO | groundzero.py:121 | Reasoning engine initialized
+2026-01-17 11:16:02,530 | groundzero | INFO | groundzero.py:137 | Continuous learning initialized
+2026-01-17 11:16:03,045 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\User\Coding\GroundZero\data\workspace)
+2026-01-17 11:16:03,046 | groundzero | INFO | groundzero.py:144 | Tools initialized (code execution, documents, files)
+2026-01-17 11:16:03,246 | groundzero | INFO | __init__.py:123 | Starting GroundZero Dashboard at http://0.0.0.0:8080
+2026-01-17 11:20:43,447 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 11:20:43,447 | groundzero | INFO | groundzero.py:89 | Using mock model (no GPU required)
+2026-01-17 11:20:43,447 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 11:20:43,447 | groundzero | INFO | groundzero.py:100 | Knowledge graph: 1 nodes
+2026-01-17 11:20:43,463 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 11:20:43,464 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 11:20:43,465 | groundzero | INFO | groundzero.py:106 | Memory system initialized
+2026-01-17 11:20:43,466 | groundzero | INFO | groundzero.py:111 | Web search initialized
+2026-01-17 11:20:43,466 | groundzero | INFO | groundzero.py:121 | Reasoning engine initialized
+2026-01-17 11:20:43,478 | groundzero | INFO | groundzero.py:137 | Continuous learning initialized
+2026-01-17 11:20:43,992 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\User\Coding\GroundZero\data\workspace)
+2026-01-17 11:20:43,993 | groundzero | INFO | groundzero.py:144 | Tools initialized (code execution, documents, files)
+2026-01-17 11:20:43,996 | groundzero | INFO | __init__.py:127 | Downloading deepseek-ai/DeepSeek-R1-Distill-Qwen-7B...
+2026-01-17 11:20:43,996 | groundzero | INFO | __init__.py:128 | This may take a while (7B model is ~15GB)...
+2026-01-17 11:22:42,461 | groundzero | INFO | __init__.py:134 | Downloading tokenizer...
+2026-01-17 11:22:47,667 | groundzero | INFO | __init__.py:138 | Downloading model weights...
+2026-01-17 11:46:34,543 | groundzero | INFO | __init__.py:148 | Saving as GroundZero to data\models\groundzero\model...
+2026-01-17 12:01:01,642 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 12:01:01,654 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 12:01:01,655 | groundzero | INFO | groundzero.py:89 | Using mock model (no GPU required)
+2026-01-17 12:01:01,667 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 12:01:01,672 | groundzero | INFO | groundzero.py:100 | Knowledge graph: 1 nodes
+2026-01-17 12:01:01,705 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 12:01:01,722 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 12:01:01,723 | groundzero | INFO | groundzero.py:106 | Memory system initialized
+2026-01-17 12:01:01,725 | groundzero | INFO | groundzero.py:111 | Web search initialized
+2026-01-17 12:01:01,725 | groundzero | INFO | groundzero.py:121 | Reasoning engine initialized
+2026-01-17 12:01:01,727 | groundzero | INFO | groundzero.py:137 | Continuous learning initialized
+2026-01-17 12:01:11,344 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\User\Coding\GroundZero\data\workspace)
+2026-01-17 12:01:11,344 | groundzero | INFO | groundzero.py:144 | Tools initialized (code execution, documents, files)
+2026-01-17 12:01:11,344 | groundzero | INFO | groundzero.py:80 | [OK] GroundZero AI initialized!
+2026-01-17 12:01:15,124 | groundzero | INFO | __init__.py:123 | Starting GroundZero Dashboard at http://0.0.0.0:8080
+2026-01-17 17:49:07,501 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 17:49:07,503 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 17:49:07,503 | groundzero | INFO | groundzero.py:89 | Using mock model (no GPU required)
+2026-01-17 17:49:07,505 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 17:49:07,506 | groundzero | INFO | groundzero.py:100 | Knowledge graph: 1 nodes
+2026-01-17 17:49:07,509 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 17:49:07,509 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 17:49:07,509 | groundzero | INFO | groundzero.py:106 | Memory system initialized
+2026-01-17 17:49:07,510 | groundzero | INFO | groundzero.py:111 | Web search initialized
+2026-01-17 17:49:07,511 | groundzero | INFO | groundzero.py:121 | Reasoning engine initialized
+2026-01-17 17:49:07,512 | groundzero | INFO | groundzero.py:137 | Continuous learning initialized
+2026-01-17 17:49:07,815 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\Nevin\OneDrive - Eyona\Code\ML\GroundZero\data\workspace)
+2026-01-17 17:49:07,815 | groundzero | INFO | groundzero.py:144 | Tools initialized (code execution, documents, files)
+2026-01-17 17:49:07,815 | groundzero | INFO | groundzero.py:80 | [OK] GroundZero AI initialized!
+2026-01-17 18:21:00,506 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 18:21:00,508 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 18:21:00,508 | groundzero | INFO | groundzero.py:89 | Using mock model (no GPU required)
+2026-01-17 18:21:00,510 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 18:21:00,511 | groundzero | INFO | groundzero.py:100 | Knowledge graph: 1 nodes
+2026-01-17 18:21:00,513 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 18:21:00,513 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 18:21:00,514 | groundzero | INFO | groundzero.py:106 | Memory system initialized
+2026-01-17 18:21:00,514 | groundzero | INFO | groundzero.py:111 | Web search initialized
+2026-01-17 18:21:00,514 | groundzero | INFO | groundzero.py:121 | Reasoning engine initialized
+2026-01-17 18:21:00,515 | groundzero | INFO | groundzero.py:137 | Continuous learning initialized
+2026-01-17 18:21:01,010 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\Nevin\OneDrive - Eyona\Code\ML\GroundZero\data\workspace)
+2026-01-17 18:21:01,010 | groundzero | INFO | groundzero.py:144 | Tools initialized (code execution, documents, files)
+2026-01-17 18:21:01,011 | groundzero | INFO | groundzero.py:80 | [OK] GroundZero AI initialized!
+2026-01-17 18:21:01,179 | groundzero | INFO | __init__.py:468 | Starting GroundZero Dashboard at http://0.0.0.0:8080
+2026-01-17 18:21:16,265 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 18:21:16,267 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 18:21:16,268 | groundzero | INFO | groundzero.py:89 | Using mock model (no GPU required)
+2026-01-17 18:21:16,268 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 18:21:16,269 | groundzero | INFO | groundzero.py:105 | Knowledge graph: 1 nodes
+2026-01-17 18:21:16,271 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 18:21:16,272 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 18:21:16,272 | groundzero | INFO | groundzero.py:111 | Memory system initialized
+2026-01-17 18:21:16,273 | groundzero | INFO | groundzero.py:116 | Web search initialized
+2026-01-17 18:21:16,273 | groundzero | INFO | groundzero.py:126 | Reasoning engine initialized
+2026-01-17 18:21:16,273 | groundzero | INFO | groundzero.py:142 | Continuous learning initialized
+2026-01-17 18:21:16,530 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\Nevin\OneDrive - Eyona\Code\ML\GroundZero\data\workspace)
+2026-01-17 18:21:16,530 | groundzero | INFO | groundzero.py:149 | Tools initialized (code execution, documents, files)
+2026-01-17 18:21:16,531 | groundzero | INFO | groundzero.py:80 | [OK] GroundZero AI initialized!
+2026-01-17 18:21:16,636 | groundzero | INFO | __init__.py:468 | Starting GroundZero Dashboard at http://0.0.0.0:8080
+2026-01-17 18:26:58,668 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 18:26:58,669 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 18:26:58,669 | groundzero | INFO | groundzero.py:89 | Using mock model (no GPU required)
+2026-01-17 18:26:58,670 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 18:26:58,671 | groundzero | INFO | groundzero.py:105 | Knowledge graph: 1 nodes
+2026-01-17 18:26:58,673 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 18:26:58,674 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 18:26:58,674 | groundzero | INFO | groundzero.py:111 | Memory system initialized
+2026-01-17 18:26:58,674 | groundzero | INFO | groundzero.py:116 | Web search initialized
+2026-01-17 18:26:58,674 | groundzero | INFO | groundzero.py:126 | Reasoning engine initialized
+2026-01-17 18:26:58,675 | groundzero | INFO | groundzero.py:142 | Continuous learning initialized
+2026-01-17 18:26:58,972 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\Nevin\OneDrive - Eyona\Code\ML\GroundZero\data\workspace)
+2026-01-17 18:26:58,972 | groundzero | INFO | groundzero.py:149 | Tools initialized (code execution, documents, files)
+2026-01-17 18:26:58,972 | groundzero | INFO | groundzero.py:80 | [OK] GroundZero AI initialized!
+2026-01-17 18:26:59,090 | groundzero | INFO | __init__.py:468 | Starting GroundZero Dashboard at http://0.0.0.0:8080
+2026-01-17 18:27:07,467 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 18:27:07,469 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 18:27:07,469 | groundzero | INFO | __init__.py:217 | Loading GroundZero-AI...
+2026-01-17 18:27:12,345 | groundzero | INFO | __init__.py:228 | Using device: cuda
+2026-01-17 18:27:12,347 | groundzero | ERROR | __init__.py:275 | Error loading model: Unrecognized model in data\models\groundzero\model. Should have a `model_type` key in its config.json, or contain one of the following strings in its name: aimv2, aimv2_vision_model, albert, align, altclip, apertus, arcee, aria, aria_text, audio-spectrogram-transformer, autoformer, aya_vision, bamba, bark, bart, beit, bert, bert-generation, big_bird, bigbird_pegasus, biogpt, bit, bitnet, blenderbot, blenderbot-small, blip, blip-2, blip_2_qformer, bloom, bridgetower, bros, camembert, canine, chameleon, chinese_clip, chinese_clip_vision_model, clap, clip, clip_text_model, clip_vision_model, clipseg, clvp, code_llama, codegen, cohere, cohere2, cohere2_vision, colpali, colqwen2, conditional_detr, convbert, convnext, convnextv2, cpmant, csm, ctrl, cvt, d_fine, dab-detr, dac, data2vec-audio, data2vec-text, data2vec-vision, dbrx, deberta, deberta-v2, decision_transformer, deepseek_v2, deepseek_v3, deepseek_vl, deepseek_vl_hybrid, deformable_detr, deit, depth_anything, depth_pro, deta, detr, dia, diffllama, dinat, dinov2, dinov2_with_registers, dinov3_convnext, dinov3_vit, distilbert, doge, donut-swin, dots1, dpr, dpt, efficientformer, efficientloftr, efficientnet, electra, emu3, encodec, encoder-decoder, eomt, ernie, ernie4_5, ernie4_5_moe, ernie_m, esm, evolla, exaone4, falcon, falcon_h1, falcon_mamba, fastspeech2_conformer, fastspeech2_conformer_with_hifigan, flaubert, flava, florence2, fnet, focalnet, fsmt, funnel, fuyu, gemma, gemma2, gemma3, gemma3_text, gemma3n, gemma3n_audio, gemma3n_text, gemma3n_vision, git, glm, glm4, glm4_moe, glm4v, glm4v_moe, glm4v_moe_text, glm4v_text, glpn, got_ocr2, gpt-sw3, gpt2, gpt_bigcode, gpt_neo, gpt_neox, gpt_neox_japanese, gpt_oss, gptj, gptsan-japanese, granite, granite_speech, granitemoe, granitemoehybrid, granitemoeshared, granitevision, graphormer, grounding-dino, groupvit, helium, hgnet_v2, hiera, hubert, hunyuan_v1_dense, hunyuan_v1_moe, ibert, idefics, idefics2, idefics3, idefics3_vision, ijepa, imagegpt, informer, instructblip, instructblipvideo, internvl, internvl_vision, jamba, janus, jetmoe, jukebox, kosmos-2, kosmos-2.5, kyutai_speech_to_text, layoutlm, layoutlmv2, layoutlmv3, led, levit, lfm2, lightglue, lilt, llama, llama4, llama4_text, llava, llava_next, llava_next_video, llava_onevision, longformer, longt5, luke, lxmert, m2m_100, mamba, mamba2, marian, markuplm, mask2former, maskformer, maskformer-swin, mbart, mctct, mega, megatron-bert, metaclip_2, mgp-str, mimi, minimax, mistral, mistral3, mixtral, mlcd, mllama, mm-grounding-dino, mobilebert, mobilenet_v1, mobilenet_v2, mobilevit, mobilevitv2, modernbert, modernbert-decoder, moonshine, moshi, mpnet, mpt, mra, mt5, musicgen, musicgen_melody, mvp, nat, nemotron, nezha, nllb-moe, nougat, nystromformer, olmo, olmo2, olmoe, omdet-turbo, oneformer, open-llama, openai-gpt, opt, ovis2, owlv2, owlvit, paligemma, patchtsmixer, patchtst, pegasus, pegasus_x, perceiver, perception_encoder, perception_lm, persimmon, phi, phi3, phi4_multimodal, phimoe, pix2struct, pixtral, plbart, poolformer, pop2piano, prompt_depth_anything, prophetnet, pvt, pvt_v2, qdqbert, qwen2, qwen2_5_omni, qwen2_5_vl, qwen2_5_vl_text, qwen2_audio, qwen2_audio_encoder, qwen2_moe, qwen2_vl, qwen2_vl_text, qwen3, qwen3_moe, rag, realm, recurrent_gemma, reformer, regnet, rembert, resnet, retribert, roberta, roberta-prelayernorm, roc_bert, roformer, rt_detr, rt_detr_resnet, rt_detr_v2, rwkv, sam, sam2, sam2_hiera_det_model, sam2_video, sam2_vision_model, sam_hq, sam_hq_vision_model, sam_vision_model, seamless_m4t, seamless_m4t_v2, seed_oss, segformer, seggpt, sew, sew-d, shieldgemma2, siglip, siglip2, siglip_vision_model, smollm3, smolvlm, smolvlm_vision, speech-encoder-decoder, speech_to_text, speech_to_text_2, speecht5, splinter, squeezebert, stablelm, starcoder2, superglue, superpoint, swiftformer, swin, swin2sr, swinv2, switch_transformers, t5, t5gemma, table-transformer, tapas, textnet, time_series_transformer, timesfm, timesformer, timm_backbone, timm_wrapper, trajectory_transformer, transfo-xl, trocr, tvlt, tvp, udop, umt5, unispeech, unispeech-sat, univnet, upernet, van, video_llava, videomae, vilt, vipllava, vision-encoder-decoder, vision-text-dual-encoder, visual_bert, vit, vit_hybrid, vit_mae, vit_msn, vitdet, vitmatte, vitpose, vitpose_backbone, vits, vivit, vjepa2, voxtral, voxtral_encoder, wav2vec2, wav2vec2-bert, wav2vec2-conformer, wavlm, whisper, xclip, xcodec, xglm, xlm, xlm-prophetnet, xlm-roberta, xlm-roberta-xl, xlnet, xlstm, xmod, yolos, yoso, zamba, zamba2, zoedepth
+2026-01-17 18:27:12,347 | groundzero | INFO | groundzero.py:99 | Falling back to mock model
+2026-01-17 18:27:12,348 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 18:27:12,350 | groundzero | INFO | groundzero.py:105 | Knowledge graph: 1 nodes
+2026-01-17 18:27:12,352 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 18:27:12,352 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 18:27:12,352 | groundzero | INFO | groundzero.py:111 | Memory system initialized
+2026-01-17 18:27:12,353 | groundzero | INFO | groundzero.py:116 | Web search initialized
+2026-01-17 18:27:12,353 | groundzero | INFO | groundzero.py:126 | Reasoning engine initialized
+2026-01-17 18:27:12,353 | groundzero | INFO | groundzero.py:142 | Continuous learning initialized
+2026-01-17 18:27:12,354 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\Nevin\OneDrive - Eyona\Code\ML\GroundZero\data\workspace)
+2026-01-17 18:27:12,354 | groundzero | INFO | groundzero.py:149 | Tools initialized (code execution, documents, files)
+2026-01-17 18:27:12,354 | groundzero | INFO | groundzero.py:80 | [OK] GroundZero AI initialized!
+2026-01-17 18:27:12,411 | groundzero | INFO | __init__.py:468 | Starting GroundZero Dashboard at http://0.0.0.0:8080
+2026-01-17 18:29:59,446 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 18:29:59,447 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 18:29:59,448 | groundzero | INFO | __init__.py:217 | Loading GroundZero-AI...
+2026-01-17 18:30:03,055 | groundzero | INFO | __init__.py:228 | Using device: cuda
+2026-01-17 18:30:03,403 | groundzero | WARNING | __init__.py:256 | bitsandbytes not available, loading without quantization
+2026-01-17 18:30:11,256 | groundzero | INFO | __init__.py:268 | [OK] GroundZero-AI loaded successfully
+2026-01-17 18:30:11,263 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 18:30:11,267 | groundzero | INFO | groundzero.py:105 | Knowledge graph: 1 nodes
+2026-01-17 18:30:11,277 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 18:30:11,279 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 18:30:11,280 | groundzero | INFO | groundzero.py:111 | Memory system initialized
+2026-01-17 18:30:11,281 | groundzero | INFO | groundzero.py:116 | Web search initialized
+2026-01-17 18:30:11,281 | groundzero | INFO | groundzero.py:126 | Reasoning engine initialized
+2026-01-17 18:30:11,283 | groundzero | INFO | groundzero.py:142 | Continuous learning initialized
+2026-01-17 18:30:11,289 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\Nevin\OneDrive - Eyona\Code\ML\GroundZero\data\workspace)
+2026-01-17 18:30:11,289 | groundzero | INFO | groundzero.py:149 | Tools initialized (code execution, documents, files)
+2026-01-17 18:30:11,289 | groundzero | INFO | groundzero.py:80 | [OK] GroundZero AI initialized!
+2026-01-17 18:30:11,502 | groundzero | INFO | __init__.py:468 | Starting GroundZero Dashboard at http://0.0.0.0:8080
+2026-01-17 18:39:30,934 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 18:39:30,937 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 18:39:30,937 | groundzero | INFO | __init__.py:217 | Loading GroundZero-AI...
+2026-01-17 18:39:37,051 | groundzero | INFO | __init__.py:228 | Using device: cuda
+2026-01-17 18:39:37,372 | groundzero | WARNING | __init__.py:256 | bitsandbytes not available, loading without quantization
+2026-01-17 18:39:48,412 | groundzero | INFO | __init__.py:268 | [OK] GroundZero-AI loaded successfully
+2026-01-17 18:39:48,416 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 18:39:48,421 | groundzero | INFO | groundzero.py:105 | Knowledge graph: 1 nodes
+2026-01-17 18:39:48,431 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 18:39:48,433 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 18:39:48,434 | groundzero | INFO | groundzero.py:111 | Memory system initialized
+2026-01-17 18:39:48,435 | groundzero | INFO | groundzero.py:116 | Web search initialized
+2026-01-17 18:39:48,436 | groundzero | INFO | groundzero.py:126 | Reasoning engine initialized
+2026-01-17 18:39:48,437 | groundzero | INFO | groundzero.py:142 | Continuous learning initialized
+2026-01-17 18:39:48,441 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\Nevin\OneDrive - Eyona\Code\ML\GroundZero\data\workspace)
+2026-01-17 18:39:48,442 | groundzero | INFO | groundzero.py:149 | Tools initialized (code execution, documents, files)
+2026-01-17 18:39:48,442 | groundzero | INFO | groundzero.py:80 | [OK] GroundZero AI initialized!
+2026-01-17 18:39:48,648 | groundzero | INFO | __init__.py:469 | Starting GroundZero Dashboard at http://0.0.0.0:8080
+2026-01-17 18:45:50,102 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 18:45:50,105 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 18:45:50,105 | groundzero | INFO | __init__.py:217 | Loading GroundZero-AI...
+2026-01-17 18:45:56,771 | groundzero | INFO | __init__.py:228 | Using device: cuda
+2026-01-17 18:45:57,084 | groundzero | WARNING | __init__.py:256 | bitsandbytes not available, loading without quantization
+2026-01-17 18:46:09,933 | groundzero | INFO | __init__.py:268 | [OK] GroundZero-AI loaded successfully
+2026-01-17 18:46:09,948 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 18:46:09,960 | groundzero | INFO | groundzero.py:105 | Knowledge graph: 1 nodes
+2026-01-17 18:46:09,977 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 18:46:09,978 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 18:46:09,980 | groundzero | INFO | groundzero.py:111 | Memory system initialized
+2026-01-17 18:46:09,981 | groundzero | INFO | groundzero.py:116 | Web search initialized
+2026-01-17 18:46:09,982 | groundzero | INFO | groundzero.py:126 | Reasoning engine initialized
+2026-01-17 18:46:09,984 | groundzero | INFO | groundzero.py:142 | Continuous learning initialized
+2026-01-17 18:46:09,992 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\Nevin\OneDrive - Eyona\Code\ML\GroundZero\data\workspace)
+2026-01-17 18:46:09,993 | groundzero | INFO | groundzero.py:149 | Tools initialized (code execution, documents, files)
+2026-01-17 18:46:09,993 | groundzero | INFO | groundzero.py:80 | [OK] GroundZero AI initialized!
+2026-01-17 18:58:01,878 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 18:58:01,890 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 18:58:01,891 | groundzero | INFO | __init__.py:217 | Loading GroundZero-AI...
+2026-01-17 18:58:01,895 | groundzero | INFO | __init__.py:228 | Using device: cuda
+2026-01-17 18:58:02,274 | groundzero | WARNING | __init__.py:256 | bitsandbytes not available, loading without quantization
+2026-01-17 18:58:02,407 | groundzero | ERROR | __init__.py:275 | Error loading model: You are trying to offload the whole model to the disk. Please use the `disk_offload` function instead.
+2026-01-17 18:58:02,408 | groundzero | INFO | groundzero.py:99 | Falling back to mock model
+2026-01-17 18:58:02,411 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 18:58:02,411 | groundzero | INFO | groundzero.py:105 | Knowledge graph: 1 nodes
+2026-01-17 18:58:02,418 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 18:58:02,419 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 18:58:02,420 | groundzero | INFO | groundzero.py:111 | Memory system initialized
+2026-01-17 18:58:02,421 | groundzero | INFO | groundzero.py:116 | Web search initialized
+2026-01-17 18:58:02,421 | groundzero | INFO | groundzero.py:126 | Reasoning engine initialized
+2026-01-17 18:58:02,423 | groundzero | INFO | groundzero.py:142 | Continuous learning initialized
+2026-01-17 18:58:02,426 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\Nevin\OneDrive - Eyona\Code\ML\GroundZero\data\workspace)
+2026-01-17 18:58:02,426 | groundzero | INFO | groundzero.py:149 | Tools initialized (code execution, documents, files)
+2026-01-17 18:58:02,427 | groundzero | INFO | groundzero.py:80 | [OK] GroundZero AI initialized!
+2026-01-17 19:57:20,686 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 19:57:20,702 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 19:57:20,703 | groundzero | INFO | __init__.py:218 | Loading GroundZero-AI...
+2026-01-17 19:57:27,136 | groundzero | INFO | __init__.py:229 | Using device: cuda
+2026-01-17 19:57:37,867 | groundzero | INFO | __init__.py:249 | [OK] GroundZero-AI loaded successfully
+2026-01-17 19:57:38,000 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 19:57:38,002 | groundzero | INFO | groundzero.py:105 | Knowledge graph: 1 nodes
+2026-01-17 19:57:38,039 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 19:57:38,041 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 19:57:38,041 | groundzero | INFO | groundzero.py:111 | Memory system initialized
+2026-01-17 19:57:38,042 | groundzero | INFO | groundzero.py:116 | Web search initialized
+2026-01-17 19:57:38,042 | groundzero | INFO | groundzero.py:126 | Reasoning engine initialized
+2026-01-17 19:57:38,058 | groundzero | INFO | groundzero.py:142 | Continuous learning initialized
+2026-01-17 19:57:38,061 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\Nevin\OneDrive - Eyona\Code\ML\GroundZero\data\workspace)
+2026-01-17 19:57:38,062 | groundzero | INFO | groundzero.py:149 | Tools initialized (code execution, documents, files)
+2026-01-17 19:57:38,062 | groundzero | INFO | groundzero.py:80 | [OK] GroundZero AI initialized!
+2026-01-17 19:57:38,294 | groundzero | INFO | __init__.py:469 | Starting GroundZero Dashboard at http://0.0.0.0:8080
+2026-01-17 20:18:30,298 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 20:18:30,302 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 20:18:30,303 | groundzero | INFO | __init__.py:218 | Loading GroundZero-AI...
+2026-01-17 20:18:36,316 | groundzero | INFO | __init__.py:229 | Using device: cuda
+2026-01-17 20:18:47,009 | groundzero | INFO | __init__.py:249 | [OK] GroundZero-AI loaded successfully
+2026-01-17 20:18:47,039 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 20:18:47,054 | groundzero | INFO | groundzero.py:105 | Knowledge graph: 1 nodes
+2026-01-17 20:18:47,080 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 20:18:47,082 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 20:18:47,085 | groundzero | INFO | groundzero.py:111 | Memory system initialized
+2026-01-17 20:18:47,088 | groundzero | INFO | groundzero.py:116 | Web search initialized
+2026-01-17 20:18:47,091 | groundzero | INFO | groundzero.py:126 | Reasoning engine initialized
+2026-01-17 20:18:47,097 | groundzero | INFO | groundzero.py:142 | Continuous learning initialized
+2026-01-17 20:18:47,117 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\Nevin\OneDrive - Eyona\Code\ML\GroundZero\data\workspace)
+2026-01-17 20:18:47,117 | groundzero | INFO | groundzero.py:149 | Tools initialized (code execution, documents, files)
+2026-01-17 20:18:47,118 | groundzero | INFO | groundzero.py:80 | [OK] GroundZero AI initialized!
+2026-01-17 20:44:06,073 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 20:44:06,075 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 20:44:06,076 | groundzero | INFO | __init__.py:218 | Loading GroundZero-AI...
+2026-01-17 20:44:12,426 | groundzero | INFO | __init__.py:229 | Using device: cuda
+2026-01-17 20:44:15,546 | groundzero | INFO | __init__.py:249 | [OK] GroundZero-AI loaded successfully
+2026-01-17 20:44:15,548 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 20:44:15,549 | groundzero | INFO | groundzero.py:105 | Knowledge graph: 1 nodes
+2026-01-17 20:44:15,552 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 20:44:15,553 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 20:44:15,554 | groundzero | INFO | groundzero.py:111 | Memory system initialized
+2026-01-17 20:44:15,554 | groundzero | INFO | groundzero.py:116 | Web search initialized
+2026-01-17 20:44:15,554 | groundzero | INFO | groundzero.py:126 | Reasoning engine initialized
+2026-01-17 20:44:15,555 | groundzero | INFO | groundzero.py:142 | Continuous learning initialized
+2026-01-17 20:44:15,556 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\Nevin\OneDrive - Eyona\Code\ML\GroundZero\data\workspace)
+2026-01-17 20:44:15,556 | groundzero | INFO | groundzero.py:149 | Tools initialized (code execution, documents, files)
+2026-01-17 20:44:15,556 | groundzero | INFO | groundzero.py:80 | [OK] GroundZero AI initialized!
+2026-01-17 20:44:15,673 | groundzero | INFO | __init__.py:469 | Starting GroundZero Dashboard at http://0.0.0.0:8080
+2026-01-17 20:50:11,052 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 20:50:11,053 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 20:50:11,054 | groundzero | INFO | __init__.py:218 | Loading GroundZero-AI...
+2026-01-17 20:50:15,997 | groundzero | INFO | __init__.py:229 | Using device: cuda
+2026-01-17 20:50:18,827 | groundzero | INFO | __init__.py:249 | [OK] GroundZero-AI loaded successfully
+2026-01-17 20:50:18,828 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 20:50:18,829 | groundzero | INFO | groundzero.py:105 | Knowledge graph: 1 nodes
+2026-01-17 20:50:18,852 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 20:50:18,853 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 20:50:18,854 | groundzero | INFO | groundzero.py:111 | Memory system initialized
+2026-01-17 20:50:18,854 | groundzero | INFO | groundzero.py:116 | Web search initialized
+2026-01-17 20:50:18,854 | groundzero | INFO | groundzero.py:126 | Reasoning engine initialized
+2026-01-17 20:50:18,870 | groundzero | INFO | groundzero.py:142 | Continuous learning initialized
+2026-01-17 20:50:18,872 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\Nevin\OneDrive - Eyona\Code\ML\GroundZero\data\workspace)
+2026-01-17 20:50:18,872 | groundzero | INFO | groundzero.py:149 | Tools initialized (code execution, documents, files)
+2026-01-17 20:50:18,872 | groundzero | INFO | groundzero.py:80 | [OK] GroundZero AI initialized!
+2026-01-17 20:50:19,000 | groundzero | INFO | __init__.py:471 | Starting GroundZero Dashboard at http://0.0.0.0:8080
+2026-01-17 20:53:25,501 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 20:53:25,502 | groundzero | INFO | __init__.py:218 | Loading GroundZero-AI...
+2026-01-17 20:53:29,423 | groundzero | INFO | __init__.py:229 | Using device: cuda
+2026-01-17 20:53:32,202 | groundzero | INFO | __init__.py:249 | [OK] GroundZero-AI loaded successfully
+2026-01-17 20:57:48,225 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 20:57:48,227 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 20:57:48,228 | groundzero | INFO | __init__.py:218 | Loading GroundZero-AI...
+2026-01-17 20:57:55,365 | groundzero | INFO | __init__.py:229 | Using device: cuda
+2026-01-17 20:57:58,382 | groundzero | INFO | __init__.py:249 | [OK] GroundZero-AI loaded successfully
+2026-01-17 20:57:58,385 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 20:57:58,387 | groundzero | INFO | groundzero.py:105 | Knowledge graph: 1 nodes
+2026-01-17 20:57:58,402 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 20:57:58,404 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 20:57:58,404 | groundzero | INFO | groundzero.py:111 | Memory system initialized
+2026-01-17 20:57:58,405 | groundzero | INFO | groundzero.py:116 | Web search initialized
+2026-01-17 20:57:58,405 | groundzero | INFO | groundzero.py:126 | Reasoning engine initialized
+2026-01-17 20:57:58,414 | groundzero | INFO | groundzero.py:142 | Continuous learning initialized
+2026-01-17 20:57:58,416 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\Nevin\OneDrive - Eyona\Code\ML\GroundZero\data\workspace)
+2026-01-17 20:57:58,416 | groundzero | INFO | groundzero.py:149 | Tools initialized (code execution, documents, files)
+2026-01-17 20:57:58,416 | groundzero | INFO | groundzero.py:80 | [OK] GroundZero AI initialized!
+2026-01-17 20:57:58,497 | groundzero | INFO | __init__.py:471 | Starting GroundZero Dashboard at http://0.0.0.0:8080
+2026-01-17 21:02:27,391 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 21:02:27,393 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 21:02:27,393 | groundzero | INFO | __init__.py:218 | Loading GroundZero-AI...
+2026-01-17 21:02:33,298 | groundzero | INFO | __init__.py:229 | Using device: cuda
+2026-01-17 21:02:35,710 | groundzero | INFO | __init__.py:249 | [OK] GroundZero-AI loaded successfully
+2026-01-17 21:02:35,711 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 21:02:35,712 | groundzero | INFO | groundzero.py:105 | Knowledge graph: 1 nodes
+2026-01-17 21:02:35,732 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 21:02:35,733 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 21:02:35,733 | groundzero | INFO | groundzero.py:111 | Memory system initialized
+2026-01-17 21:02:35,733 | groundzero | INFO | groundzero.py:116 | Web search initialized
+2026-01-17 21:02:35,734 | groundzero | INFO | groundzero.py:126 | Reasoning engine initialized
+2026-01-17 21:02:35,746 | groundzero | INFO | groundzero.py:142 | Continuous learning initialized
+2026-01-17 21:02:35,748 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\Nevin\OneDrive - Eyona\Code\ML\GroundZero\data\workspace)
+2026-01-17 21:02:35,749 | groundzero | INFO | groundzero.py:149 | Tools initialized (code execution, documents, files)
+2026-01-17 21:02:35,749 | groundzero | INFO | groundzero.py:80 | [OK] GroundZero AI initialized!
+2026-01-17 21:02:35,831 | groundzero | INFO | __init__.py:471 | Starting GroundZero Dashboard at http://0.0.0.0:8080
+2026-01-17 21:05:04,549 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 21:05:04,549 | groundzero | INFO | __init__.py:218 | Loading GroundZero-AI...
+2026-01-17 21:05:08,535 | groundzero | INFO | __init__.py:229 | Using device: cuda
+2026-01-17 21:05:10,962 | groundzero | INFO | __init__.py:249 | [OK] GroundZero-AI loaded successfully
+2026-01-17 21:07:21,173 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 21:07:21,175 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 21:07:21,175 | groundzero | INFO | __init__.py:218 | Loading GroundZero-AI...
+2026-01-17 21:07:25,872 | groundzero | INFO | __init__.py:229 | Using device: cuda
+2026-01-17 21:07:28,044 | groundzero | INFO | __init__.py:249 | [OK] GroundZero-AI loaded successfully
+2026-01-17 21:07:28,047 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 21:07:28,048 | groundzero | INFO | groundzero.py:105 | Knowledge graph: 1 nodes
+2026-01-17 21:07:28,063 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 21:07:28,064 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 21:07:28,064 | groundzero | INFO | groundzero.py:111 | Memory system initialized
+2026-01-17 21:07:28,065 | groundzero | INFO | groundzero.py:116 | Web search initialized
+2026-01-17 21:07:28,065 | groundzero | INFO | groundzero.py:126 | Reasoning engine initialized
+2026-01-17 21:07:28,079 | groundzero | INFO | groundzero.py:142 | Continuous learning initialized
+2026-01-17 21:07:28,081 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\Nevin\OneDrive - Eyona\Code\ML\GroundZero\data\workspace)
+2026-01-17 21:07:28,081 | groundzero | INFO | groundzero.py:149 | Tools initialized (code execution, documents, files)
+2026-01-17 21:07:28,081 | groundzero | INFO | groundzero.py:80 | [OK] GroundZero AI initialized!
+2026-01-17 21:07:28,160 | groundzero | INFO | __init__.py:471 | Starting GroundZero Dashboard at http://0.0.0.0:8080
+2026-01-17 21:12:59,192 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 21:12:59,193 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 21:12:59,194 | groundzero | INFO | __init__.py:218 | Loading GroundZero-AI...
+2026-01-17 21:13:05,346 | groundzero | INFO | __init__.py:229 | Using device: cuda
+2026-01-17 21:13:08,156 | groundzero | INFO | __init__.py:249 | [OK] GroundZero-AI loaded successfully
+2026-01-17 21:13:08,157 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 21:13:08,159 | groundzero | INFO | groundzero.py:105 | Knowledge graph: 1 nodes
+2026-01-17 21:13:08,177 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 21:13:08,177 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 21:13:08,178 | groundzero | INFO | groundzero.py:111 | Memory system initialized
+2026-01-17 21:13:08,179 | groundzero | INFO | groundzero.py:116 | Web search initialized
+2026-01-17 21:13:08,179 | groundzero | INFO | groundzero.py:126 | Reasoning engine initialized
+2026-01-17 21:13:08,194 | groundzero | INFO | groundzero.py:142 | Continuous learning initialized
+2026-01-17 21:13:08,195 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\Nevin\OneDrive - Eyona\Code\ML\GroundZero\data\workspace)
+2026-01-17 21:13:08,195 | groundzero | INFO | groundzero.py:149 | Tools initialized (code execution, documents, files)
+2026-01-17 21:13:08,196 | groundzero | INFO | groundzero.py:80 | [OK] GroundZero AI initialized!
+2026-01-17 21:13:08,270 | groundzero | INFO | __init__.py:471 | Starting GroundZero Dashboard at http://0.0.0.0:8080
+2026-01-17 21:19:03,053 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 21:19:03,054 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 21:19:03,054 | groundzero | INFO | __init__.py:218 | Loading GroundZero-AI...
+2026-01-17 21:19:08,311 | groundzero | INFO | __init__.py:229 | Using device: cuda
+2026-01-17 21:19:11,579 | groundzero | INFO | __init__.py:249 | [OK] GroundZero-AI loaded successfully
+2026-01-17 21:19:11,580 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 21:19:11,583 | groundzero | INFO | groundzero.py:105 | Knowledge graph: 1 nodes
+2026-01-17 21:19:11,601 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 21:19:11,602 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 21:19:11,603 | groundzero | INFO | groundzero.py:111 | Memory system initialized
+2026-01-17 21:19:11,603 | groundzero | INFO | groundzero.py:116 | Web search initialized
+2026-01-17 21:19:11,603 | groundzero | INFO | groundzero.py:126 | Reasoning engine initialized
+2026-01-17 21:19:11,619 | groundzero | INFO | groundzero.py:142 | Continuous learning initialized
+2026-01-17 21:19:11,620 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\Nevin\OneDrive - Eyona\Code\ML\GroundZero\data\workspace)
+2026-01-17 21:19:11,620 | groundzero | INFO | groundzero.py:149 | Tools initialized (code execution, documents, files)
+2026-01-17 21:19:11,621 | groundzero | INFO | groundzero.py:80 | [OK] GroundZero AI initialized!
+2026-01-17 21:19:11,705 | groundzero | INFO | __init__.py:471 | Starting GroundZero Dashboard at http://0.0.0.0:8080
+2026-01-17 21:19:51,172 | groundzero | INFO | groundzero.py:313 | Feedback recorded: 5/5
+2026-01-17 21:21:52,584 | groundzero | INFO | documents.py:664 | Processed document: test_sales_data_20260117_212152.csv (157 words, 1 chunks)
+2026-01-17 21:22:40,345 | groundzero | INFO | documents.py:664 | Processed document: test_sales_data_20260117_212240.csv (157 words, 1 chunks)
+2026-01-17 21:35:54,922 | groundzero | INFO | groundzero.py:313 | Feedback recorded: 1/5
+2026-01-17 21:39:01,440 | groundzero | INFO | documents.py:664 | Processed document: find_stores_20260117_213901.py (164 words, 3 chunks)
+2026-01-17 21:39:31,140 | groundzero | INFO | documents.py:664 | Processed document: test_sales_data_20260117_213931.csv (157 words, 1 chunks)
+2026-01-17 21:57:03,190 | groundzero | INFO | groundzero.py:69 | Initializing GroundZero AI...
+2026-01-17 21:57:03,191 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 21:57:03,192 | groundzero | INFO | __init__.py:218 | Loading GroundZero-AI...
+2026-01-17 21:57:08,883 | groundzero | INFO | __init__.py:229 | Using device: cuda
+2026-01-17 21:57:12,551 | groundzero | INFO | __init__.py:249 | [OK] GroundZero-AI loaded successfully
+2026-01-17 21:57:12,553 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 21:57:12,554 | groundzero | INFO | groundzero.py:105 | Knowledge graph: 1 nodes
+2026-01-17 21:57:12,570 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 21:57:12,571 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 21:57:12,572 | groundzero | INFO | groundzero.py:111 | Memory system initialized
+2026-01-17 21:57:12,572 | groundzero | INFO | groundzero.py:116 | Web search initialized
+2026-01-17 21:57:12,572 | groundzero | INFO | groundzero.py:126 | Reasoning engine initialized
+2026-01-17 21:57:12,584 | groundzero | INFO | groundzero.py:142 | Continuous learning initialized
+2026-01-17 21:57:12,598 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\Nevin\OneDrive - Eyona\Code\ML\GroundZero\data\workspace)
+2026-01-17 21:57:12,599 | groundzero | INFO | groundzero.py:149 | Tools initialized (code execution, documents, files)
+2026-01-17 21:57:12,599 | groundzero | INFO | groundzero.py:80 | [OK] GroundZero AI initialized!
+2026-01-17 21:57:12,710 | groundzero | INFO | __init__.py:574 | Starting GroundZero Dashboard at http://0.0.0.0:8080
+2026-01-17 21:57:21,818 | groundzero | INFO | documents.py:664 | Processed document: find_stores_20260117_215721.py (164 words, 3 chunks)
+2026-01-17 21:57:24,288 | groundzero | ERROR | __init__.py:176 | Chat error: GroundZeroAI.chat() got an unexpected keyword argument 'conversation_id'
+2026-01-17 22:04:03,789 | groundzero | INFO | groundzero.py:71 | Initializing GroundZero AI...
+2026-01-17 22:04:03,790 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 22:04:03,790 | groundzero | INFO | __init__.py:218 | Loading GroundZero-AI...
+2026-01-17 22:04:08,458 | groundzero | INFO | __init__.py:229 | Using device: cuda
+2026-01-17 22:04:10,600 | groundzero | INFO | __init__.py:249 | [OK] GroundZero-AI loaded successfully
+2026-01-17 22:04:10,601 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 22:04:10,602 | groundzero | INFO | groundzero.py:107 | Knowledge graph: 1 nodes
+2026-01-17 22:04:10,603 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 22:04:10,603 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 22:04:10,603 | groundzero | INFO | groundzero.py:113 | Memory system initialized
+2026-01-17 22:04:10,604 | groundzero | INFO | groundzero.py:118 | Web search initialized
+2026-01-17 22:04:10,604 | groundzero | INFO | groundzero.py:128 | Reasoning engine initialized
+2026-01-17 22:04:10,605 | groundzero | INFO | groundzero.py:144 | Continuous learning initialized
+2026-01-17 22:04:10,625 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\Nevin\OneDrive - Eyona\Code\ML\GroundZero\data\workspace)
+2026-01-17 22:04:10,626 | groundzero | INFO | groundzero.py:151 | Tools initialized (code execution, documents, files)
+2026-01-17 22:04:10,626 | groundzero | INFO | groundzero.py:82 | [OK] GroundZero AI initialized!
+2026-01-17 22:04:10,705 | groundzero | INFO | __init__.py:574 | Starting GroundZero Dashboard at http://0.0.0.0:8080
+2026-01-17 22:04:19,662 | groundzero | INFO | documents.py:664 | Processed document: test_sales_data_20260117_220419.csv (157 words, 1 chunks)
+2026-01-17 22:04:39,412 | groundzero | ERROR | __init__.py:176 | Chat error: 'tuple' object has no attribute 'get'
+2026-01-17 22:06:59,874 | groundzero | INFO | groundzero.py:71 | Initializing GroundZero AI...
+2026-01-17 22:06:59,875 | groundzero | INFO | __init__.py:102 | Loaded model state: GroundZero-AI v1.0.0
+2026-01-17 22:06:59,875 | groundzero | INFO | __init__.py:218 | Loading GroundZero-AI...
+2026-01-17 22:07:04,642 | groundzero | INFO | __init__.py:229 | Using device: cuda
+2026-01-17 22:07:06,878 | groundzero | INFO | __init__.py:249 | [OK] GroundZero-AI loaded successfully
+2026-01-17 22:07:06,879 | groundzero | INFO | __init__.py:187 | Loaded knowledge graph: 1 nodes, 0 edges
+2026-01-17 22:07:06,881 | groundzero | INFO | groundzero.py:107 | Knowledge graph: 1 nodes
+2026-01-17 22:07:06,897 | groundzero | INFO | __init__.py:137 | Loaded 2 user profiles
+2026-01-17 22:07:06,898 | groundzero | INFO | __init__.py:232 | Loaded 0 conversations
+2026-01-17 22:07:06,898 | groundzero | INFO | groundzero.py:113 | Memory system initialized
+2026-01-17 22:07:06,899 | groundzero | INFO | groundzero.py:118 | Web search initialized
+2026-01-17 22:07:06,899 | groundzero | INFO | groundzero.py:128 | Reasoning engine initialized
+2026-01-17 22:07:06,911 | groundzero | INFO | groundzero.py:144 | Continuous learning initialized
+2026-01-17 22:07:06,924 | groundzero | INFO | manager.py:85 | Tools Manager initialized (workspace: C:\Users\Nevin\OneDrive - Eyona\Code\ML\GroundZero\data\workspace)
+2026-01-17 22:07:06,925 | groundzero | INFO | groundzero.py:151 | Tools initialized (code execution, documents, files)
+2026-01-17 22:07:06,925 | groundzero | INFO | groundzero.py:82 | [OK] GroundZero AI initialized!
+2026-01-17 22:07:06,990 | groundzero | INFO | __init__.py:582 | Starting GroundZero Dashboard at http://0.0.0.0:8080
+2026-01-17 22:07:13,807 | groundzero | INFO | documents.py:664 | Processed document: test_sales_data_20260117_220713.csv (157 words, 1 chunks)
+2026-01-17 22:08:26,388 | groundzero | INFO | documents.py:664 | Processed document: test_sales_data_20260117_220826.csv (157 words, 1 chunks)
+2026-01-17 22:08:31,727 | groundzero | INFO | documents.py:664 | Processed document: test_sales_data_20260117_220826.csv (157 words, 1 chunks)
+2026-01-17 22:08:31,736 | groundzero | INFO | documents.py:664 | Processed document: test_sales_data_20260117_220713.csv (157 words, 1 chunks)
+2026-01-17 22:08:31,744 | groundzero | INFO | documents.py:664 | Processed document: test_sales_data_20260117_220419.csv (157 words, 1 chunks)
+2026-01-17 22:08:31,751 | groundzero | INFO | documents.py:664 | Processed document: test_sales_data_20260117_213931.csv (157 words, 1 chunks)
+2026-01-17 22:08:31,757 | groundzero | INFO | documents.py:664 | Processed document: test_sales_data_20260117_212240.csv (157 words, 1 chunks)
+2026-01-17 22:08:31,764 | groundzero | INFO | documents.py:664 | Processed document: test_sales_data_20260117_212152.csv (157 words, 1 chunks)
+2026-01-17 22:08:31,772 | groundzero | INFO | documents.py:664 | Processed document: test_sales_data_20260117_220826.csv (157 words, 1 chunks)
+2026-01-17 22:08:31,778 | groundzero | INFO | documents.py:664 | Processed document: test_sales_data_20260117_220713.csv (157 words, 1 chunks)
+2026-01-17 22:08:31,785 | groundzero | INFO | documents.py:664 | Processed document: test_sales_data_20260117_220419.csv (157 words, 1 chunks)
+2026-01-17 22:08:31,791 | groundzero | INFO | documents.py:664 | Processed document: test_sales_data_20260117_213931.csv (157 words, 1 chunks)
