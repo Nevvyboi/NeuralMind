@@ -1,6 +1,6 @@
 /**
  * GroundZero AI - Dashboard JavaScript
- * With File Upload in Chat Support (UPGRADED!)
+ * With Themes, Link Detection, Fixed Layout
  */
 
 // ============================================================================
@@ -12,8 +12,8 @@ let messages = [];
 let isLoading = false;
 let currentReasoning = null;
 let userName = 'User';
-let loadedDocuments = [];
-let pendingFile = null;  // NEW: Track file waiting to be sent
+let pendingFiles = [];
+let webSearchEnabled = false;
 
 // ============================================================================
 // INITIALIZATION
@@ -22,144 +22,183 @@ let pendingFile = null;  // NEW: Track file waiting to be sent
 document.addEventListener('DOMContentLoaded', () => {
     loadUserProfile();
     loadStats();
-    refreshDocuments();
-    refreshFiles();
-    
-    // Set up upload area click
-    const uploadArea = document.getElementById('uploadArea');
-    if (uploadArea) {
-        uploadArea.addEventListener('click', () => {
-            document.getElementById('fileUpload2').click();
-        });
-    }
-    
-    // NEW: Initialize chat file upload
-    initChatFileUpload();
+    initDragAndDrop();
+    loadThemeSettings();
 });
 
 // ============================================================================
-// CHAT FILE UPLOAD - NEW!
+// THEME SYSTEM
 // ============================================================================
 
-function initChatFileUpload() {
-    const messagesContainer = document.getElementById('messagesContainer');
-    if (!messagesContainer) return;
+function loadThemeSettings() {
+    const savedTheme = localStorage.getItem('gz-theme') || 'default';
+    const savedMode = localStorage.getItem('gz-mode') || 'dark';
     
-    // Drag and drop for chat
-    messagesContainer.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        messagesContainer.classList.add('drag-over');
-    });
+    setTheme(savedTheme, false);
+    setMode(savedMode, false);
+}
+
+function setTheme(theme, save = true) {
+    document.documentElement.setAttribute('data-theme', theme);
     
-    messagesContainer.addEventListener('dragleave', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        messagesContainer.classList.remove('drag-over');
-    });
-    
-    messagesContainer.addEventListener('drop', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        messagesContainer.classList.remove('drag-over');
-        
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            handleChatFile(files[0]);
+    // Update buttons
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.classList.contains(`theme-${theme}`)) {
+            btn.classList.add('active');
         }
     });
-}
-
-function handleChatFile(file) {
-    if (!file) return;
     
-    pendingFile = file;
-    showFilePreview(file);
-    
-    // Focus on input
-    const input = document.getElementById('messageInput');
-    if (input) {
-        input.placeholder = `Ask about ${file.name}...`;
-        input.focus();
+    if (save) {
+        localStorage.setItem('gz-theme', theme);
+        showToast(`Theme changed to ${theme}`);
     }
 }
 
-function showFilePreview(file) {
-    // Remove existing preview
-    clearFilePreview();
+function setMode(mode, save = true) {
+    document.documentElement.setAttribute('data-mode', mode);
     
-    // Create preview element
-    const preview = document.createElement('div');
-    preview.id = 'chatFilePreview';
-    preview.className = 'chat-file-preview';
-    preview.innerHTML = `
-        <span class="file-icon">${getFileIcon(file.name)}</span>
-        <span class="file-name">${file.name}</span>
-        <span class="file-size">(${formatFileSize(file.size)})</span>
-        <button onclick="clearFilePreview()" class="clear-file" title="Remove file">✕</button>
-    `;
+    // Update buttons
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.mode === mode) {
+            btn.classList.add('active');
+        }
+    });
     
-    // Insert before input container
-    const inputContainer = document.querySelector('.chat-input-wrapper') || 
-                          document.querySelector('.chat-input-container') ||
-                          document.getElementById('messageInput').parentElement;
-    
-    if (inputContainer) {
-        inputContainer.insertBefore(preview, inputContainer.firstChild);
+    if (save) {
+        localStorage.setItem('gz-mode', mode);
+        showToast(`${mode === 'dark' ? 'Dark' : 'Light'} mode enabled`);
     }
 }
 
-function clearFilePreview() {
-    pendingFile = null;
+// ============================================================================
+// DRAG AND DROP
+// ============================================================================
+
+function initDragAndDrop() {
+    const messagesContainer = document.getElementById('messagesContainer');
+    const chatSection = document.getElementById('chat-section');
     
-    const preview = document.getElementById('chatFilePreview');
-    if (preview) preview.remove();
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
     
-    const input = document.getElementById('messageInput');
-    if (input) {
-        input.placeholder = 'Type a message... (or upload a file to analyze)';
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
     }
     
-    const fileInput = document.getElementById('chatFileInput');
-    if (fileInput) fileInput.value = '';
+    ['dragenter', 'dragover'].forEach(eventName => {
+        chatSection.addEventListener(eventName, () => {
+            messagesContainer.classList.add('drag-over');
+        }, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        chatSection.addEventListener(eventName, () => {
+            messagesContainer.classList.remove('drag-over');
+        }, false);
+    });
+    
+    chatSection.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            for (let i = 0; i < files.length; i++) {
+                addPendingFile(files[i]);
+            }
+        }
+    }, false);
 }
+
+// ============================================================================
+// WEB SEARCH TOGGLE
+// ============================================================================
+
+function toggleSearch() {
+    webSearchEnabled = !webSearchEnabled;
+    
+    const btn = document.getElementById('searchToggle');
+    const indicator = document.getElementById('searchIndicator');
+    
+    if (webSearchEnabled) {
+        btn.classList.add('active');
+        indicator.classList.add('visible');
+    } else {
+        btn.classList.remove('active');
+        indicator.classList.remove('visible');
+    }
+}
+
+// ============================================================================
+// FILE ATTACHMENT
+// ============================================================================
 
 function triggerFileUpload() {
-    let fileInput = document.getElementById('chatFileInput');
-    
-    if (!fileInput) {
-        // Create hidden file input if it doesn't exist
-        fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.id = 'chatFileInput';
-        fileInput.style.display = 'none';
-        fileInput.accept = '.csv,.xlsx,.xls,.pdf,.txt,.json,.docx,.py,.js,.html,.md';
-        fileInput.onchange = (e) => {
-            if (e.target.files.length > 0) {
-                handleChatFile(e.target.files[0]);
-            }
-        };
-        document.body.appendChild(fileInput);
+    document.getElementById('chatFileInput').click();
+}
+
+function handleFileSelect(event) {
+    const files = event.target.files;
+    for (let i = 0; i < files.length; i++) {
+        addPendingFile(files[i]);
+    }
+    event.target.value = '';
+}
+
+function addPendingFile(file) {
+    if (pendingFiles.some(f => f.name === file.name && f.size === file.size)) {
+        showToast('File already attached', 'info');
+        return;
     }
     
-    fileInput.click();
+    pendingFiles.push(file);
+    renderPendingFiles();
+    document.getElementById('messageInput').focus();
+}
+
+function removePendingFile(index) {
+    pendingFiles.splice(index, 1);
+    renderPendingFiles();
+}
+
+function renderPendingFiles() {
+    const container = document.getElementById('attachedFilesPreview');
+    
+    if (pendingFiles.length === 0) {
+        container.innerHTML = '';
+        container.classList.remove('has-files');
+        document.getElementById('messageInput').placeholder = 'Message GroundZero...';
+        return;
+    }
+    
+    container.classList.add('has-files');
+    container.innerHTML = pendingFiles.map((file, index) => `
+        <div class="attached-file">
+            <span class="file-icon">${getFileIcon(file.name)}</span>
+            <span class="file-name">${truncateFilename(file.name, 15)}</span>
+            <span class="file-size">${formatFileSize(file.size)}</span>
+            <button class="remove-file-btn" onclick="removePendingFile(${index})" title="Remove">×</button>
+        </div>
+    `).join('');
+    
+    document.getElementById('messageInput').placeholder = `Ask about your file...`;
 }
 
 function getFileIcon(filename) {
     const ext = filename.split('.').pop().toLowerCase();
     const icons = {
-        'csv': '📊',
-        'xlsx': '📊',
-        'xls': '📊',
+        'csv': '📊', 'xlsx': '📊', 'xls': '📊',
         'pdf': '📕',
-        'txt': '📄',
+        'txt': '📄', 'md': '📄',
         'json': '📋',
-        'docx': '📝',
-        'doc': '📝',
+        'docx': '📝', 'doc': '📝',
         'py': '🐍',
         'js': '📜',
         'html': '🌐',
-        'md': '📑',
+        'xml': '📰',
+        'yaml': '⚙️', 'yml': '⚙️',
+        'png': '🖼️', 'jpg': '🖼️', 'jpeg': '🖼️', 'gif': '🖼️',
     };
     return icons[ext] || '📎';
 }
@@ -170,33 +209,42 @@ function formatFileSize(bytes) {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
+function truncateFilename(name, maxLen) {
+    if (name.length <= maxLen) return name;
+    const ext = name.includes('.') ? '.' + name.split('.').pop() : '';
+    const base = name.slice(0, name.length - ext.length);
+    const truncatedBase = base.slice(0, maxLen - ext.length - 2);
+    return truncatedBase + '..' + ext;
+}
+
 // ============================================================================
-// CHAT FUNCTIONS - UPGRADED WITH FILE SUPPORT
+// SEND MESSAGE
 // ============================================================================
 
 async function sendMessage() {
     const input = document.getElementById('messageInput');
     const message = input.value.trim();
-    const file = pendingFile;
+    const files = [...pendingFiles];
     
-    if (!message && !file) return;
+    if (!message && files.length === 0) return;
     if (isLoading) return;
     
-    // Build user message display
-    let userMessageText = message || 'Analyze this file';
-    if (file) {
-        userMessageText = `📎 ${file.name}\n\n${message || 'Analyze this file and tell me what it contains'}`;
+    // Build display message
+    let userMessageDisplay = message;
+    if (files.length > 0) {
+        const fileList = files.map(f => `📎 ${f.name}`).join('\n');
+        userMessageDisplay = files.length > 0 && message 
+            ? `${fileList}\n\n${message}`
+            : fileList + (message ? `\n\n${message}` : '\n\nAnalyze this file');
     }
     
-    // Add user message to UI
-    addMessage('user', userMessageText);
+    addMessage('user', userMessageDisplay);
+    
+    // Clear input
     input.value = '';
     autoResize(input);
-    
-    // Clear file preview
-    const hadFile = !!file;
-    const fileName = file ? file.name : null;
-    clearFilePreview();
+    pendingFiles = [];
+    renderPendingFiles();
     
     // Show loading
     isLoading = true;
@@ -206,46 +254,40 @@ async function sendMessage() {
     try {
         let response;
         
-        if (hadFile && file) {
-            // Send with file (multipart form)
+        if (files.length > 0) {
             const formData = new FormData();
             formData.append('message', message || 'Analyze this file and tell me what it contains');
-            formData.append('file', file);
             formData.append('user_id', 'default');
+            formData.append('search_web', webSearchEnabled);
             if (conversationId) {
                 formData.append('conversation_id', conversationId);
             }
+            
+            files.forEach((file) => {
+                formData.append('file', file);
+            });
             
             response = await fetch('/api/chat', {
                 method: 'POST',
                 body: formData
             });
         } else {
-            // Regular chat (JSON)
             response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message: message,
                     conversation_id: conversationId,
-                    user_id: 'default'
+                    user_id: 'default',
+                    search_web: webSearchEnabled
                 })
             });
         }
         
         const data = await response.json();
         
-        // Remove loading message
         removeMessage(loadingId);
-        
-        // Build response with file indicator
-        let responseText = data.response;
-        if (data.file_analyzed) {
-            responseText = `📄 Analyzed: **${data.file_analyzed}**\n\n${responseText}`;
-        }
-        
-        // Add response
-        addMessage('assistant', responseText, false, data.reasoning);
+        addMessage('assistant', data.response, false, data.reasoning);
         
         if (data.reasoning) {
             currentReasoning = data.reasoning;
@@ -265,6 +307,10 @@ async function sendMessage() {
     document.getElementById('sendBtn').disabled = false;
 }
 
+// ============================================================================
+// MESSAGE DISPLAY
+// ============================================================================
+
 function addMessage(role, content, isLoading = false, reasoning = null) {
     const container = document.getElementById('messagesContainer');
     const welcome = container.querySelector('.welcome-message');
@@ -281,7 +327,7 @@ function addMessage(role, content, isLoading = false, reasoning = null) {
     
     let reasoningBtn = '';
     if (reasoning && reasoning.steps && reasoning.steps.length > 0) {
-        reasoningBtn = `<button class="reasoning-btn" onclick="showReasoning(${JSON.stringify(reasoning).replace(/"/g, '&quot;')})">
+        reasoningBtn = `<button class="reasoning-btn" onclick='showReasoning(${JSON.stringify(reasoning).replace(/'/g, "\\'")})'>
             <span class="reasoning-dot"></span> Show reasoning (${reasoning.steps.length} steps)
         </button>`;
     }
@@ -321,14 +367,31 @@ function removeMessage(messageId) {
 function formatMessage(text) {
     if (!text) return '';
     
+    // Escape HTML
+    text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    
     // Code blocks
-    text = text.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>');
+    text = text.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+        return `<pre><code class="language-${lang || ''}">${code}</code></pre>`;
+    });
     
     // Inline code
     text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
     
     // Bold
     text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    
+    // Italic
+    text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    
+    // Links - Markdown style [text](url)
+    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    
+    // Auto-detect URLs and make them clickable
+    text = text.replace(/(^|[^"'])(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
+    
+    // Horizontal rule
+    text = text.replace(/^---$/gm, '<hr>');
     
     // Line breaks
     text = text.replace(/\n/g, '<br>');
@@ -339,8 +402,15 @@ function formatMessage(text) {
 function newChat() {
     conversationId = null;
     messages = [];
-    pendingFile = null;
-    clearFilePreview();
+    pendingFiles = [];
+    webSearchEnabled = false;
+    
+    const searchBtn = document.getElementById('searchToggle');
+    const searchIndicator = document.getElementById('searchIndicator');
+    if (searchBtn) searchBtn.classList.remove('active');
+    if (searchIndicator) searchIndicator.classList.remove('visible');
+    
+    renderPendingFiles();
     
     document.getElementById('messagesContainer').innerHTML = `
         <div class="welcome-message">
@@ -348,244 +418,14 @@ function newChat() {
             <p>I'm your personal AI assistant that learns and grows with you.</p>
             <div class="capabilities">
                 <div class="capability"><span>💬</span><span>Chat & Learn</span></div>
-                <div class="capability"><span>📄</span><span>Read Documents</span></div>
+                <div class="capability"><span>📄</span><span>Analyze Files</span></div>
+                <div class="capability"><span>🌐</span><span>Web Search</span></div>
                 <div class="capability"><span>💻</span><span>Run Code</span></div>
-                <div class="capability"><span>📝</span><span>Create Files</span></div>
             </div>
-            <p class="upload-hint">📎 <strong>NEW!</strong> Drag & drop files here or click the 📎 button to analyze documents!</p>
+            <p class="hint-text">📎 Attach files • 🌐 Toggle web search • Just ask anything!</p>
         </div>
     `;
     showSection('chat');
-}
-
-// ============================================================================
-// FILE UPLOAD & DOCUMENTS
-// ============================================================================
-
-async function uploadFile(file) {
-    if (!file) return;
-    
-    showToast(`Uploading ${file.name}...`);
-    
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    try {
-        const response = await fetch('/api/upload', {
-            method: 'POST',
-            body: formData
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            showToast(`Loaded: ${file.name}`);
-            refreshDocuments();
-            
-            // If in chat, show message about loaded doc
-            if (document.getElementById('chat-section').classList.contains('active')) {
-                addMessage('assistant', `📄 Loaded document: **${file.name}**\n\nYou can now ask me questions about this document!`);
-            }
-        } else {
-            showToast(`Error: ${data.error}`, 'error');
-        }
-    } catch (error) {
-        showToast('Upload failed', 'error');
-        console.error('Upload error:', error);
-    }
-}
-
-function handleDrop(e) {
-    e.preventDefault();
-    e.target.classList.remove('drag-over');
-    
-    const files = e.dataTransfer.files;
-    for (let file of files) {
-        uploadFile(file);
-    }
-}
-
-function handleDragOver(e) {
-    e.preventDefault();
-    e.target.classList.add('drag-over');
-}
-
-function handleDragLeave(e) {
-    e.target.classList.remove('drag-over');
-}
-
-async function refreshDocuments() {
-    try {
-        const response = await fetch('/api/documents');
-        const data = await response.json();
-        
-        loadedDocuments = data.documents || [];
-        
-        const container = document.getElementById('loadedDocuments');
-        if (container) {
-            if (loadedDocuments.length === 0) {
-                container.innerHTML = '<p class="no-docs">No documents loaded yet</p>';
-            } else {
-                container.innerHTML = loadedDocuments.map(doc => `
-                    <div class="loaded-doc" onclick="selectDocument('${doc.id}')">
-                        <span class="doc-icon">${getFileIcon(doc.filename)}</span>
-                        <span class="doc-name">${doc.filename}</span>
-                        <span class="doc-info">${doc.word_count || 0} words</span>
-                    </div>
-                `).join('');
-            }
-        }
-    } catch (error) {
-        console.error('Error refreshing documents:', error);
-    }
-}
-
-async function askDocuments() {
-    const input = document.getElementById('docQuestion');
-    const question = input.value.trim();
-    
-    if (!question) return;
-    
-    // Send to chat with document context
-    addMessage('user', `📄 Question about documents: ${question}`);
-    input.value = '';
-    
-    isLoading = true;
-    const loadingId = addMessage('assistant', '...', true);
-    
-    try {
-        const response = await fetch('/api/documents/ask', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ question })
-        });
-        
-        const data = await response.json();
-        
-        removeMessage(loadingId);
-        addMessage('assistant', data.answer || data.error || 'No answer found');
-        
-    } catch (error) {
-        removeMessage(loadingId);
-        addMessage('assistant', 'Error asking about documents');
-    }
-    
-    isLoading = false;
-    showSection('chat');
-}
-
-// ============================================================================
-// CODE EXECUTION
-// ============================================================================
-
-async function runCode() {
-    const codeInput = document.getElementById('codeInput');
-    const code = codeInput.value.trim();
-    const language = document.getElementById('codeLanguage')?.value || 'python';
-    
-    if (!code) return;
-    
-    const outputDiv = document.getElementById('codeOutput');
-    outputDiv.innerHTML = '<p class="running">Running...</p>';
-    
-    try {
-        const response = await fetch('/api/code/run', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code, language })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            outputDiv.innerHTML = `<pre class="success">${escapeHtml(data.output)}</pre>`;
-        } else {
-            outputDiv.innerHTML = `<pre class="error">${escapeHtml(data.error || 'Unknown error')}</pre>`;
-        }
-    } catch (error) {
-        outputDiv.innerHTML = `<pre class="error">Error: ${error.message}</pre>`;
-    }
-}
-
-function clearCode() {
-    document.getElementById('codeInput').value = '';
-    document.getElementById('codeOutput').innerHTML = '<p class="placeholder">Output will appear here...</p>';
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// ============================================================================
-// FILE CREATION
-// ============================================================================
-
-async function createFile() {
-    const filename = document.getElementById('createFilename').value.trim();
-    const content = document.getElementById('createContent').value.trim();
-    const fileType = document.getElementById('createFileType').value;
-    
-    if (!filename) {
-        showToast('Enter a filename', 'error');
-        return;
-    }
-    
-    // Ensure proper extension
-    let finalFilename = filename;
-    if (!filename.includes('.')) {
-        finalFilename = filename + '.' + fileType;
-    }
-    
-    try {
-        const response = await fetch('/api/files/create', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                filename: finalFilename,
-                content: content,
-                type: fileType
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            showToast(`Created: ${finalFilename}`);
-            document.getElementById('createFilename').value = '';
-            document.getElementById('createContent').value = '';
-            refreshFiles();
-        } else {
-            showToast(`Error: ${data.error}`, 'error');
-        }
-    } catch (error) {
-        showToast('Failed to create file', 'error');
-    }
-}
-
-async function refreshFiles() {
-    try {
-        const response = await fetch('/api/files/list');
-        const data = await response.json();
-        
-        const container = document.getElementById('createdFiles');
-        if (container) {
-            if (!data.files || data.files.length === 0) {
-                container.innerHTML = '<p class="no-files">No files created yet</p>';
-            } else {
-                container.innerHTML = data.files.map(f => `
-                    <div class="created-file">
-                        <span class="file-icon">${getFileIcon(f.name)}</span>
-                        <span class="file-name">${f.name}</span>
-                        <a href="/api/files/download/${f.name}" class="download-btn" download>⬇️</a>
-                    </div>
-                `).join('');
-            }
-        }
-    } catch (error) {
-        console.error('Error refreshing files:', error);
-    }
 }
 
 // ============================================================================
@@ -594,7 +434,6 @@ async function refreshFiles() {
 
 async function searchKnowledge() {
     const query = document.getElementById('knowledgeSearch').value.trim();
-    
     if (!query) return;
     
     try {
@@ -608,11 +447,11 @@ async function searchKnowledge() {
                 <div class="knowledge-item">
                     <h4>${r.name || 'Unknown'}</h4>
                     <p>${r.content || ''}</p>
-                    <span class="confidence">Confidence: ${(r.confidence * 100).toFixed(0)}%</span>
+                    <span class="confidence">Confidence: ${((r.confidence || 0) * 100).toFixed(0)}%</span>
                 </div>
             `).join('');
         } else {
-            container.innerHTML = '<p>No results found</p>';
+            container.innerHTML = '<p class="empty-state">No results found</p>';
         }
     } catch (error) {
         console.error('Error searching knowledge:', error);
@@ -664,31 +503,22 @@ async function loadStats() {
                 <div class="stat-card">
                     <h3>🤖 Model</h3>
                     <p class="stat-value">${stats.model?.name || 'Unknown'}</p>
-                    <p class="stat-label">Version: ${stats.model?.version || 'N/A'}</p>
                     <p class="stat-label">Status: ${stats.model?.loaded ? 'Loaded' : 'Mock Mode'}</p>
                 </div>
                 <div class="stat-card">
                     <h3>📚 Knowledge</h3>
                     <p class="stat-value">${stats.knowledge?.total_nodes || 0}</p>
                     <p class="stat-label">Nodes</p>
-                    <p class="stat-label">Edges: ${stats.knowledge?.total_edges || 0}</p>
                 </div>
                 <div class="stat-card">
                     <h3>💾 Memory</h3>
                     <p class="stat-value">${stats.memory?.conversations || 0}</p>
                     <p class="stat-label">Conversations</p>
-                    <p class="stat-label">User: ${stats.memory?.current_user || 'default'}</p>
                 </div>
                 <div class="stat-card">
                     <h3>📈 Learning</h3>
                     <p class="stat-value">${stats.learning?.queue_size || 0}</p>
                     <p class="stat-label">Items in Queue</p>
-                </div>
-                <div class="stat-card">
-                    <h3>🛠️ Tools</h3>
-                    <p class="stat-value">${stats.tools?.total || 0}</p>
-                    <p class="stat-label">Executions</p>
-                    <p class="stat-label">Documents: ${loadedDocuments.length}</p>
                 </div>
             `;
         }
@@ -719,7 +549,6 @@ async function loadUserProfile() {
 
 async function saveName() {
     const name = document.getElementById('settingsName').value.trim();
-    
     if (!name) return;
     
     try {
@@ -738,7 +567,7 @@ async function saveName() {
 }
 
 // ============================================================================
-// REASONING
+// REASONING PANEL
 // ============================================================================
 
 function showReasoning(reasoning) {
@@ -760,7 +589,6 @@ function showReasoning(reasoning) {
                         <div class="step-content">
                             <p class="step-thought">${step.thought || ''}</p>
                             ${step.action ? `<p class="step-action">Action: ${step.action}</p>` : ''}
-                            ${step.result ? `<p class="step-result">Result: ${step.result}</p>` : ''}
                         </div>
                     </div>
                 `).join('')}
@@ -780,24 +608,16 @@ function closeReasoning() {
 // ============================================================================
 
 function showSection(sectionName) {
-    // Hide all sections
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     
-    // Show selected section
     const section = document.getElementById(`${sectionName}-section`);
     if (section) section.classList.add('active');
     
-    // Update nav
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.toggle('active', item.dataset.section === sectionName);
     });
     
-    // Load section-specific data
     if (sectionName === 'stats') loadStats();
-    if (sectionName === 'files') {
-        refreshDocuments();
-        refreshFiles();
-    }
 }
 
 // ============================================================================
@@ -850,7 +670,7 @@ function handleKeyDown(event) {
 
 function autoResize(textarea) {
     textarea.style.height = 'auto';
-    textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+    textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
 }
 
 function showToast(message, type = 'info') {

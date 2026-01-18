@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="default" data-mode="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,20 +28,8 @@
                     <span class="nav-icon">💬</span>
                     <span>Chat</span>
                 </a>
-                <a href="#" class="nav-item" data-section="files" onclick="showSection('files')">
-                    <span class="nav-icon">📁</span>
-                    <span>Files & Tools</span>
-                </a>
-                <a href="#" class="nav-item" data-section="code" onclick="showSection('code')">
-                    <span class="nav-icon">💻</span>
-                    <span>Code</span>
-                </a>
-                <a href="#" class="nav-item" data-section="history" onclick="showSection('history')">
-                    <span class="nav-icon">📜</span>
-                    <span>History</span>
-                </a>
                 <a href="#" class="nav-item" data-section="knowledge" onclick="showSection('knowledge')">
-                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-icon">📚</span>
                     <span>Knowledge</span>
                 </a>
                 <a href="#" class="nav-item" data-section="stats" onclick="showSection('stats')">
@@ -66,204 +54,94 @@
         <main class="main-content">
             <!-- Chat Section -->
             <section id="chat-section" class="section active">
-                <div class="chat-header">
-                    <h1>GroundZero AI</h1>
-                    <p>Your personal AI assistant with continuous learning</p>
-                </div>
-                
-                <div class="messages-container" id="messagesContainer">
-                    <div class="welcome-message">
-                        <h2>Welcome to GroundZero AI! 🧠</h2>
-                        <p>I'm your personal AI assistant that learns and grows with you.</p>
-                        <div class="capabilities">
-                            <div class="capability">
-                                <span>💬</span>
-                                <span>Chat & Learn</span>
+                <div class="chat-container">
+                    <div class="messages-container" id="messagesContainer">
+                        <div class="welcome-message">
+                            <h2>Welcome to GroundZero AI! 🧠</h2>
+                            <p>I'm your personal AI assistant that learns and grows with you.</p>
+                            <div class="capabilities">
+                                <div class="capability">
+                                    <span>💬</span>
+                                    <span>Chat & Learn</span>
+                                </div>
+                                <div class="capability">
+                                    <span>📄</span>
+                                    <span>Analyze Files</span>
+                                </div>
+                                <div class="capability">
+                                    <span>🌐</span>
+                                    <span>Web Search</span>
+                                </div>
+                                <div class="capability">
+                                    <span>💻</span>
+                                    <span>Run Code</span>
+                                </div>
                             </div>
-                            <div class="capability">
-                                <span>📄</span>
-                                <span>Read Documents</span>
+                            <p class="hint-text">📎 Attach files • 🌐 Toggle web search • Just ask anything!</p>
+                        </div>
+                    </div>
+                    
+                    <div class="input-wrapper">
+                        <!-- File preview -->
+                        <div id="attachedFilesPreview" class="attached-files-preview"></div>
+                        
+                        <div class="input-container">
+                            <div class="input-tools">
+                                <button class="tool-btn attach-btn" onclick="triggerFileUpload()" title="Attach file">
+                                    📎
+                                </button>
+                                <button class="tool-btn search-btn" id="searchToggle" onclick="toggleSearch()" title="Toggle web search">
+                                    🌐
+                                </button>
                             </div>
-                            <div class="capability">
-                                <span>💻</span>
-                                <span>Run Code</span>
-                            </div>
-                            <div class="capability">
-                                <span>📝</span>
-                                <span>Create Files</span>
-                            </div>
+                            
+                            <input type="file" id="chatFileInput" style="display:none" 
+                                   accept=".pdf,.xlsx,.xls,.csv,.docx,.doc,.txt,.json,.md,.py,.js,.html,.xml,.yaml,.yml,.png,.jpg,.jpeg"
+                                   onchange="handleFileSelect(event)" multiple>
+                            
+                            <textarea 
+                                id="messageInput" 
+                                placeholder="Message GroundZero..."
+                                rows="1"
+                                onkeydown="handleKeyDown(event)"
+                                oninput="autoResize(this)"
+                            ></textarea>
+                            
+                            <button class="send-btn" onclick="sendMessage()" id="sendBtn" title="Send message">
+                                <span>↑</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Search indicator -->
+                        <div id="searchIndicator" class="search-indicator">
+                            <span>🌐</span> Web search enabled - I'll search the web to help answer your question
                         </div>
                     </div>
-                </div>
-                
-                <div class="input-container">
-                    <div class="input-actions">
-                        <button class="input-action-btn" onclick="document.getElementById('fileUpload').click()" title="Upload file">
-                            📎
-                        </button>
-                        <input type="file" id="fileUpload" style="display:none" onchange="uploadFile(this.files[0])" 
-                               accept=".pdf,.xlsx,.xls,.csv,.docx,.doc,.txt,.json,.md,.py">
-                    </div>
-                    <textarea 
-                        id="messageInput" 
-                        placeholder="Type a message... (or upload a file to analyze)"
-                        rows="1"
-                        onkeydown="handleKeyDown(event)"
-                        oninput="autoResize(this)"
-                    ></textarea>
-                    <button class="send-btn" onclick="sendMessage()" id="sendBtn">
-                        <span>➤</span>
-                    </button>
-                </div>
-            </section>
-            
-            <!-- Files Section -->
-            <section id="files-section" class="section">
-                <div class="section-header">
-                    <h2>📁 Files & Tools</h2>
-                    <p>Upload documents to analyze or create new files</p>
-                </div>
-                
-                <div class="tools-grid">
-                    <!-- Upload Area -->
-                    <div class="tool-card">
-                        <h3>📤 Upload Document</h3>
-                        <p>Upload PDF, Excel, Word, CSV to analyze</p>
-                        <div class="upload-area" id="uploadArea" 
-                             ondrop="handleDrop(event)" 
-                             ondragover="handleDragOver(event)"
-                             ondragleave="handleDragLeave(event)">
-                            <span class="upload-icon">📁</span>
-                            <p>Drag & drop files here</p>
-                            <p class="upload-hint">or click to browse</p>
-                            <input type="file" id="fileUpload2" onchange="uploadFile(this.files[0])"
-                                   accept=".pdf,.xlsx,.xls,.csv,.docx,.doc,.txt,.json,.md,.py" multiple>
-                        </div>
-                    </div>
-                    
-                    <!-- Loaded Documents -->
-                    <div class="tool-card">
-                        <h3>📄 Loaded Documents</h3>
-                        <p>Documents ready for Q&A</p>
-                        <div class="documents-list" id="documentsList">
-                            <p class="empty-state">No documents loaded yet</p>
-                        </div>
-                        <div class="doc-qa-input" style="margin-top: 10px;">
-                            <input type="text" id="docQuestion" placeholder="Ask about your documents...">
-                            <button onclick="askDocuments()">Ask</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Create File -->
-                    <div class="tool-card">
-                        <h3>📝 Create File</h3>
-                        <p>Generate Excel, Word, PDF, PowerPoint</p>
-                        <div class="create-file-form">
-                            <select id="createFileType">
-                                <option value="xlsx">Excel (.xlsx)</option>
-                                <option value="docx">Word (.docx)</option>
-                                <option value="pdf">PDF (.pdf)</option>
-                                <option value="pptx">PowerPoint (.pptx)</option>
-                                <option value="csv">CSV (.csv)</option>
-                                <option value="txt">Text (.txt)</option>
-                            </select>
-                            <input type="text" id="createFileName" placeholder="filename">
-                            <textarea id="createFileContent" placeholder="Content or data (JSON for Excel/PPT)"></textarea>
-                            <button onclick="createFile()">Create File</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Created Files -->
-                    <div class="tool-card">
-                        <h3>📦 Created Files</h3>
-                        <p>Download your generated files</p>
-                        <div class="files-list" id="createdFilesList">
-                            <p class="empty-state">No files created yet</p>
-                        </div>
-                        <button onclick="refreshFiles()" class="refresh-btn">Refresh List</button>
-                    </div>
-                </div>
-            </section>
-            
-            <!-- Code Section -->
-            <section id="code-section" class="section">
-                <div class="section-header">
-                    <h2>💻 Code Execution</h2>
-                    <p>Run Python or Bash code</p>
-                </div>
-                
-                <div class="code-container">
-                    <div class="code-toolbar">
-                        <select id="codeLanguage">
-                            <option value="python">Python</option>
-                            <option value="bash">Bash</option>
-                        </select>
-                        <button onclick="runCode()" class="run-btn">▶ Run</button>
-                        <button onclick="clearCode()" class="clear-btn">Clear</button>
-                    </div>
-                    <textarea id="codeInput" class="code-editor" placeholder="# Write your code here
-import pandas as pd
-
-# Example: Create a simple analysis
-data = {'Name': ['Alice', 'Bob'], 'Score': [95, 87]}
-df = pd.DataFrame(data)
-print(df)
-print(f'Average score: {df[&quot;Score&quot;].mean()}')"># Write your code here
-import pandas as pd
-
-# Example: Create a simple analysis
-data = {'Name': ['Alice', 'Bob'], 'Score': [95, 87]}
-df = pd.DataFrame(data)
-print(df)
-print(f'Average score: {df["Score"].mean()}')</textarea>
-                    
-                    <div class="code-output-container">
-                        <h4>Output:</h4>
-                        <pre id="codeOutput" class="code-output">Run code to see output...</pre>
-                    </div>
-                    
-                    <div class="package-installer">
-                        <h4>Install Package:</h4>
-                        <div class="install-form">
-                            <input type="text" id="packageName" placeholder="package name (e.g., seaborn)">
-                            <button onclick="installPackage()">Install</button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            
-            <!-- History Section -->
-            <section id="history-section" class="section">
-                <div class="section-header">
-                    <h2>📜 Conversation History</h2>
-                </div>
-                <div id="historyContent" class="history-list">
-                    <p class="empty-state">No conversation history yet</p>
                 </div>
             </section>
             
             <!-- Knowledge Section -->
             <section id="knowledge-section" class="section">
                 <div class="section-header">
-                    <h2>⚙️ Knowledge Graph</h2>
+                    <h2>📚 Knowledge Graph</h2>
                     <p>What GroundZero knows</p>
                 </div>
                 
                 <div class="knowledge-tools">
                     <div class="search-box">
-                        <input type="text" id="knowledgeSearch" placeholder="Search knowledge...">
+                        <input type="text" id="knowledgeSearch" placeholder="Search knowledge..." onkeydown="if(event.key==='Enter')searchKnowledge()">
                         <button onclick="searchKnowledge()">Search</button>
                     </div>
                     
                     <div class="teach-box">
-                        <h4>Teach New Knowledge:</h4>
+                        <h4>Teach New Knowledge</h4>
                         <input type="text" id="teachSubject" placeholder="Subject">
                         <textarea id="teachContent" placeholder="Content/Facts to teach"></textarea>
                         <button onclick="teachKnowledge()">Teach</button>
                     </div>
                 </div>
                 
-                <div id="knowledgeContent" class="knowledge-results">
+                <div id="knowledgeResults" class="knowledge-results">
                     <p class="empty-state">Search or browse knowledge</p>
                 </div>
             </section>
@@ -273,39 +151,65 @@ print(f'Average score: {df["Score"].mean()}')</textarea>
                 <div class="section-header">
                     <h2>📊 System Stats</h2>
                 </div>
-                <div id="statsContent" class="stats-grid">
-                    <!-- Stats will be loaded here -->
-                </div>
+                <div id="statsContent" class="stats-grid"></div>
             </section>
             
             <!-- Settings Section -->
             <section id="settings-section" class="section">
                 <div class="section-header">
                     <h2>⚙️ Settings</h2>
+                    <p>Customize your experience</p>
                 </div>
                 <div class="settings-form">
-                    <div class="setting-item">
-                        <label>Your Name:</label>
-                        <input type="text" id="settingsName" placeholder="Enter your name">
-                        <button onclick="saveName()">Save</button>
+                    <!-- Profile -->
+                    <div class="settings-group">
+                        <h3>👤 Profile</h3>
+                        <div class="setting-item">
+                            <label>Name:</label>
+                            <input type="text" id="settingsName" placeholder="Your name">
+                            <button onclick="saveName()">Save</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Theme -->
+                    <div class="settings-group">
+                        <h3>🎨 Theme</h3>
+                        <div class="theme-options">
+                            <button class="theme-btn theme-default active" onclick="setTheme('default')" title="Pink/Red"></button>
+                            <button class="theme-btn theme-ocean" onclick="setTheme('ocean')" title="Blue/Cyan"></button>
+                            <button class="theme-btn theme-sunset" onclick="setTheme('sunset')" title="Orange/Yellow"></button>
+                            <button class="theme-btn theme-forest" onclick="setTheme('forest')" title="Green"></button>
+                            <button class="theme-btn theme-violet" onclick="setTheme('violet')" title="Purple"></button>
+                        </div>
+                    </div>
+                    
+                    <!-- Mode -->
+                    <div class="settings-group">
+                        <h3>🌓 Mode</h3>
+                        <div class="mode-toggle">
+                            <button class="mode-btn active" onclick="setMode('dark')" data-mode="dark">
+                                🌙 Dark
+                            </button>
+                            <button class="mode-btn" onclick="setMode('light')" data-mode="light">
+                                ☀️ Light
+                            </button>
+                        </div>
                     </div>
                 </div>
             </section>
         </main>
         
-        <!-- Reasoning Panel (slides in from right) -->
+        <!-- Reasoning Panel -->
         <aside class="reasoning-panel" id="reasoningPanel">
             <div class="reasoning-header">
                 <h3>🧠 Reasoning</h3>
                 <button onclick="closeReasoning()" class="close-btn">×</button>
             </div>
-            <div class="reasoning-content" id="reasoningContent">
-                <!-- Reasoning steps will be shown here -->
-            </div>
+            <div class="reasoning-content" id="reasoningContent"></div>
         </aside>
     </div>
     
-    <!-- Toast notification -->
+    <!-- Toast -->
     <div id="toast" class="toast"></div>
     
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>

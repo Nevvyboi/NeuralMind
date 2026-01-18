@@ -4,6 +4,7 @@ GroundZero AI - Dashboard Backend
 
 Flask API with file tools support:
 - Chat WITH FILE UPLOAD (NEW!)
+- Chat WITH WEB SEARCH (NEW!)
 - File upload & document understanding
 - Code execution
 - File creation
@@ -60,7 +61,7 @@ def create_app(groundzero_ai=None):
         return render_template('index.html')
     
     # ========================================================================
-    # CHAT API - UPGRADED WITH FILE UPLOAD SUPPORT
+    # CHAT API - UPGRADED WITH FILE UPLOAD + WEB SEARCH SUPPORT
     # ========================================================================
     
     @app.route('/api/chat', methods=['POST'])
@@ -68,23 +69,26 @@ def create_app(groundzero_ai=None):
         """
         Chat with GroundZero AI.
         
-        UPGRADED: Now supports file uploads directly in chat!
+        UPGRADED: Now supports file uploads AND web search!
         
         Accepts either:
-        - JSON body: {"message": "...", "user_id": "..."}
-        - Multipart form with file: message + file
+        - JSON body: {"message": "...", "user_id": "...", "search_web": true/false}
+        - Multipart form with file: message + file + search_web
         """
         message = None
         user_id = 'default'
         conversation_id = None
         file_content = None
         file_name = None
+        search_web = False  # NEW: Web search flag
         
         # Check if this is a file upload (multipart/form-data)
         if request.content_type and 'multipart/form-data' in request.content_type:
             message = request.form.get('message', '')
             user_id = request.form.get('user_id', 'default')
             conversation_id = request.form.get('conversation_id')
+            # NEW: Get search_web from form data
+            search_web = request.form.get('search_web', 'false').lower() == 'true'
             
             # Handle file upload
             if 'file' in request.files:
@@ -128,6 +132,8 @@ def create_app(groundzero_ai=None):
             conversation_id = data.get('conversation_id')
             file_content = data.get('file_content')
             file_name = data.get('file_name')
+            # NEW: Get search_web from JSON data
+            search_web = data.get('search_web', False)
         
         # Validate
         if not message and not file_content:
@@ -138,7 +144,7 @@ def create_app(groundzero_ai=None):
         
         if app.groundzero:
             try:
-                # Call chat with file support - returns (response, trace) tuple
+                # Call chat with file AND search support
                 response, trace = app.groundzero.chat(
                     message,
                     user_id=user_id,
@@ -146,6 +152,7 @@ def create_app(groundzero_ai=None):
                     return_reasoning=True,
                     file_content=file_content,
                     file_name=file_name,
+                    search_web=search_web,  # NEW: Pass search flag
                 )
                 
                 # Build reasoning steps from trace object
@@ -156,6 +163,7 @@ def create_app(groundzero_ai=None):
                             "step": getattr(s, 'step_number', i+1),
                             "thought": getattr(s, 'thought', ''),
                             "type": getattr(s, 'reasoning_type', 'think'),
+                            "action": getattr(s, 'action', ''),
                         }
                         for i, s in enumerate(trace.steps)
                     ]
@@ -166,7 +174,7 @@ def create_app(groundzero_ai=None):
                     reasoning_data = {
                         'steps': [{'step': s.get('step', i+1),
                                    'thought': s.get('thought', ''),
-                                   'action': s.get('type', 'think'),
+                                   'action': s.get('action') or s.get('type', 'think'),
                                    'result': ''}
                                   for i, s in enumerate(reasoning_steps)],
                         'confidence': getattr(trace, 'confidence', 0.8) if trace else 0.8,
@@ -178,6 +186,7 @@ def create_app(groundzero_ai=None):
                     'reasoning': reasoning_data,
                     'timestamp': timestamp(),
                     'file_analyzed': file_name if file_content else None,
+                    'web_search_used': search_web,  # NEW: Tell frontend if search was used
                 })
                 
             except Exception as e:
@@ -212,21 +221,31 @@ def create_app(groundzero_ai=None):
         
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            # Add timestamp to avoid conflicts
+            
+            # Create unique filename with timestamp
             name, ext = os.path.splitext(filename)
-            filename = f"{name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}{ext}"
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+            unique_filename = f"{name}_{ts}{ext}"
+            
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
             file.save(filepath)
             
-            # Process with GroundZero
-            result = {'filename': filename, 'filepath': filepath, 'success': True}
+            # Process with GroundZero's document understanding
+            result = {
+                'success': True,
+                'filename': unique_filename,
+                'filepath': filepath,
+                'size': os.path.getsize(filepath),
+            }
             
-            if app.groundzero:
+            # Try to read and analyze with tools
+            if app.groundzero and app.groundzero.tools:
                 try:
-                    doc_info = app.groundzero.read_document(filepath)
-                    result['document'] = doc_info
+                    read_result = app.groundzero.tools.read_file(filepath)
+                    if read_result.success:
+                        result['document'] = read_result.result
                 except Exception as e:
-                    result['error'] = str(e)
+                    logger.warning(f"Could not analyze file: {e}")
             
             return jsonify(result)
         
@@ -234,90 +253,50 @@ def create_app(groundzero_ai=None):
     
     @app.route('/api/documents', methods=['GET'])
     def list_documents():
-        """List all loaded documents."""
-        if app.groundzero:
+        """List loaded documents."""
+        if app.groundzero and app.groundzero.tools:
             docs = app.groundzero.get_loaded_documents()
             return jsonify({'documents': docs})
         return jsonify({'documents': []})
     
-    @app.route('/api/documents/ask', methods=['POST'])
-    def ask_document():
-        """Ask a question about loaded documents - UPGRADED."""
-        data = request.json
-        question = data.get('question', '')
+    @app.route('/api/documents/<doc_id>', methods=['GET', 'DELETE'])
+    def document_actions(doc_id):
+        """Get or delete a document."""
+        if request.method == 'DELETE':
+            if app.groundzero and app.groundzero.tools:
+                if doc_id in app.groundzero.tools.loaded_docs:
+                    del app.groundzero.tools.loaded_docs[doc_id]
+                    return jsonify({'status': 'deleted'})
+            return jsonify({'error': 'Document not found'}), 404
         
-        if not question:
-            return jsonify({'error': 'No question provided'}), 400
-        
-        if app.groundzero:
-            # Load recent uploads first
-            try:
-                uploads_path = Path(UPLOAD_FOLDER)
-                if uploads_path.exists() and app.groundzero.tools:
-                    files = sorted(uploads_path.glob("*"), key=os.path.getmtime, reverse=True)
-                    for f in files[:10]:
-                        if f.suffix.lower() in ['.csv', '.xlsx', '.pdf', '.txt', '.json', '.docx']:
-                            doc_id = str(f.stem)
-                            if doc_id not in app.groundzero.tools.loaded_docs:
-                                try:
-                                    app.groundzero.tools.read_file(str(f))
-                                except:
-                                    pass
-            except Exception as e:
-                logger.warning(f"Error loading uploads: {e}")
-            
-            answer = app.groundzero.ask_documents(question)
-            return jsonify({
-                'question': question,
-                'answer': answer,
-                'timestamp': timestamp(),
-                'documents_loaded': len(app.groundzero.tools.loaded_docs) if app.groundzero.tools else 0,
-            })
-        
-        return jsonify({'error': 'AI not initialized'}), 500
+        # GET
+        if app.groundzero and app.groundzero.tools:
+            doc = app.groundzero.tools.loaded_docs.get(doc_id)
+            if doc:
+                return jsonify({
+                    'id': doc_id,
+                    'filename': doc.filename,
+                    'type': doc.file_type,
+                    'preview': doc.raw_content[:1000] if doc.raw_content else '',
+                })
+        return jsonify({'error': 'Document not found'}), 404
     
     # ========================================================================
     # CODE EXECUTION API
     # ========================================================================
     
-    @app.route('/api/code/run', methods=['POST'])
-    def run_code():
-        """Execute code."""
+    @app.route('/api/code/execute', methods=['POST'])
+    def execute_code():
+        """Execute Python code."""
         data = request.json
         code = data.get('code', '')
-        language = data.get('language', 'python')
         
         if not code:
             return jsonify({'error': 'No code provided'}), 400
         
         if app.groundzero:
-            result = app.groundzero.run_code(code, language=language)
-            return jsonify({
-                'success': result['success'],
-                'output': result['output'],
-                'error': result.get('error', ''),
-                'files_created': result.get('files_created', []),
-                'timestamp': timestamp(),
-            })
-        
-        return jsonify({'error': 'AI not initialized'}), 500
-    
-    @app.route('/api/code/install', methods=['POST'])
-    def install_package():
-        """Install a Python package."""
-        data = request.json
-        package = data.get('package', '')
-        
-        if not package:
-            return jsonify({'error': 'No package specified'}), 400
-        
-        if app.groundzero and app.groundzero.tools:
-            result = app.groundzero.tools.install_package(package)
-            return jsonify({
-                'success': result.success,
-                'output': result.result,
-                'error': result.error,
-            })
+            result = app.groundzero.run_code(code)
+            return jsonify(result)
         
         return jsonify({'error': 'AI not initialized'}), 500
     
@@ -326,55 +305,28 @@ def create_app(groundzero_ai=None):
     # ========================================================================
     
     @app.route('/api/files/create', methods=['POST'])
-    def create_file():
-        """Create a file (Excel, Word, PDF, etc.)."""
+    def create_file_api():
+        """Create a document file."""
         data = request.json
         filename = data.get('filename', '')
         content = data.get('content', '')
         file_type = data.get('type', 'auto')
         
-        if not filename:
-            return jsonify({'error': 'No filename provided'}), 400
+        if not filename or not content:
+            return jsonify({'error': 'Filename and content required'}), 400
         
-        if app.groundzero and app.groundzero.tools:
+        if app.groundzero:
             try:
-                ext = os.path.splitext(filename)[1].lower()
+                ext = Path(filename).suffix.lower()
                 
-                if ext == '.xlsx':
-                    if isinstance(content, str):
-                        try:
-                            content = json.loads(content)
-                        except:
-                            content = [{"data": content}]
-                    result = app.groundzero.tools.files.create_excel(filename, content)
-                    filepath = result
-                
-                elif ext == '.docx':
-                    result = app.groundzero.tools.files.create_word(filename, content)
-                    filepath = result
-                
+                if ext == '.docx':
+                    filepath = app.groundzero.create_word(filename, content, title=data.get('title'))
+                elif ext == '.xlsx':
+                    filepath = app.groundzero.create_excel(filename, content, sheet_name=data.get('sheet', 'Sheet1'))
                 elif ext == '.pdf':
-                    result = app.groundzero.tools.files.create_pdf(filename, content)
-                    filepath = result
-                
+                    filepath = app.groundzero.create_pdf(filename, content, title=data.get('title'))
                 elif ext == '.pptx':
-                    if isinstance(content, str):
-                        try:
-                            content = json.loads(content)
-                        except:
-                            content = [{"title": "Slide", "content": content}]
-                    result = app.groundzero.tools.files.create_powerpoint(filename, content)
-                    filepath = result
-                
-                elif ext == '.csv':
-                    if isinstance(content, str):
-                        try:
-                            content = json.loads(content)
-                        except:
-                            content = [[content]]
-                    result = app.groundzero.tools.create_csv(filename, content)
-                    filepath = result.result
-                
+                    filepath = app.groundzero.create_powerpoint(filename, content, title=data.get('title'))
                 else:
                     # Text file
                     result = app.groundzero.tools.create_file(filename, content)

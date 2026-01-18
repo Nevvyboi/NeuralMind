@@ -11,6 +11,7 @@ The main GroundZero AI class that integrates all components:
 - Continuous learning
 - Dashboard
 - FILE UPLOAD IN CHAT (NEW!)
+- WEB SEARCH IN CHAT (NEW!)
 
 This is your AI - it learns, remembers, and grows with you.
 """
@@ -51,6 +52,7 @@ class GroundZeroAI:
     - Learns from feedback and corrections
     - Continuous improvement
     - FILE UPLOAD IN CHAT (like Claude!)
+    - WEB SEARCH IN CHAT (like Claude!)
     """
     
     def __init__(
@@ -104,6 +106,8 @@ class GroundZeroAI:
         """Initialize knowledge graph."""
         self.knowledge = KnowledgeGraph()
         self.knowledge_extractor = KnowledgeExtractor(self.knowledge)
+        # Also create alias for dashboard compatibility
+        self.knowledge_graph = self.knowledge
         logger.info(f"Knowledge graph: {self.knowledge.get_stats()['total_nodes']} nodes")
     
     def _init_memory(self):
@@ -151,25 +155,26 @@ class GroundZeroAI:
         logger.info("Tools initialized (code execution, documents, files)")
     
     # ========================================================================
-    # CHAT INTERFACE - UPGRADED WITH FILE SUPPORT
+    # CHAT INTERFACE - WITH FILE UPLOAD + WEB SEARCH
     # ========================================================================
     
     def chat(
         self,
         message: str,
         user_id: str = None,
-        conversation_id: str = None,  # Added for dashboard compatibility
+        conversation_id: str = None,
         use_reasoning: bool = True,
         use_knowledge: bool = True,
         use_memory: bool = True,
         return_reasoning: bool = False,
-        file_content: str = None,  # NEW: File content for inline analysis
-        file_name: str = None,     # NEW: File name for context
+        file_content: str = None,
+        file_name: str = None,
+        search_web: bool = False,  # NEW: Enable web search
     ) -> Tuple[str, Optional[ReasoningTrace]]:
         """
         Chat with GroundZero AI.
         
-        UPGRADED: Now supports file uploads directly in chat!
+        UPGRADED: Now supports file uploads AND web search!
         
         Args:
             message: User's message
@@ -179,8 +184,9 @@ class GroundZeroAI:
             use_knowledge: Include knowledge graph context
             use_memory: Include memory context
             return_reasoning: Return reasoning trace
-            file_content: Content of an uploaded file to analyze (NEW)
-            file_name: Name of the uploaded file (NEW)
+            file_content: Content of an uploaded file to analyze
+            file_name: Name of the uploaded file
+            search_web: Search the web for current info (NEW)
         
         Returns:
             (response, reasoning_trace) if return_reasoning else response
@@ -188,7 +194,40 @@ class GroundZeroAI:
         if user_id:
             self.memory.set_user(user_id)
         
-        # Build the prompt - UPGRADED to handle file content
+        # ============================================================
+        # WEB SEARCH (NEW)
+        # ============================================================
+        search_context = ""
+        search_sources = []
+        
+        if search_web:
+            try:
+                logger.info(f"[Ok] Searching web for: {message}")
+                results = self.web_search.search(message, max_results=5)
+                
+                if results:
+                    search_sources = [
+                        {"title": r.title, "url": r.url, "snippet": r.snippet}
+                        for r in results[:5]
+                    ]
+                    
+                    # Build search context for the prompt
+                    search_context = "\n\n=== WEB SEARCH RESULTS ===\n"
+                    for i, r in enumerate(results[:5], 1):
+                        search_context += f"\n[{i}] {r.title}\n"
+                        search_context += f"Source: {r.url}\n"
+                        search_context += f"Summary: {r.snippet}\n"
+                    search_context += "\n=== END SEARCH RESULTS ===\n"
+                    
+                    logger.info(f"Found {len(results)} search results")
+                else:
+                    logger.info("No search results found")
+            except Exception as e:
+                logger.warning(f"Web search failed: {e}")
+        
+        # ============================================================
+        # BUILD PROMPT
+        # ============================================================
         if file_content:
             # User uploaded a file - include its content in the prompt
             file_preview = file_content[:8000]  # Limit to ~8000 chars
@@ -200,29 +239,69 @@ FILE CONTENT:
 USER QUESTION: {message}
 
 Please analyze the file content and answer the user's question based on what you see:"""
+
+        elif search_web and search_context:
+            # Web search enabled - include results in prompt
+            prompt = f"""USER QUESTION: {message}
+
+I searched the web and found these relevant results:
+{search_context}
+
+Based on the search results above, please provide a helpful and accurate answer to the user's question.
+- Synthesize information from multiple sources when relevant
+- Cite sources by number [1], [2], etc. when making specific claims
+- If the search results don't fully answer the question, say so
+
+Answer:"""
+
         else:
-            # Regular chat - just use the message directly (no context mixing!)
+            # Regular chat - just use the message directly
             prompt = message
         
-        # Generate response
+        # ============================================================
+        # GENERATE RESPONSE
+        # ============================================================
         response = self._generate(prompt)
         
-        # Generate reasoning trace for display (if requested)
+        # Add source citations if we searched and got results
+        if search_web and search_sources and "Sources:" not in response:
+            response += "\n\n---\n**Sources:**\n"
+            for i, src in enumerate(search_sources[:5], 1):
+                response += f"{i}. [{src['title']}]({src['url']})\n"
+        
+        # ============================================================
+        # REASONING TRACE
+        # ============================================================
         trace = None
         if use_reasoning:
             try:
                 trace = self.reasoning.reason(
                     message,
-                    context="",  # Empty context to avoid mixing
+                    context="",
                     use_knowledge=False,
                 )
-                # Use our direct response, not reasoning's interpretation
                 trace.final_answer = response
+                
+                # Add search step to reasoning if we searched
+                if search_web and search_sources:
+                    try:
+                        from reasoning import ThoughtStep
+                        search_step = ThoughtStep(
+                            thought=f"Searching the web for: {message}",
+                            action="web_search",
+                            result=f"Found {len(search_sources)} relevant results",
+                        )
+                        trace.steps.insert(0, search_step)
+                    except:
+                        pass
+                        
             except Exception as e:
                 logger.warning(f"Reasoning failed: {e}")
                 trace = None
         
-        # Store in memory (minimal)
+        # ============================================================
+        # STORE IN MEMORY
+        # ============================================================
         try:
             self.memory.add_turn(message, response)
         except:
@@ -365,7 +444,7 @@ Please analyze the file content and answer the user's question based on what you
         self.knowledge.save()
         
         logger.info(f"Learned about: {subject}")
-        return {"success": True, "subject": subject, "extracted": extracted}
+        return {"success": True, "subject": subject, "extracted": extracted, "stored": True}
     
     # ========================================================================
     # FEEDBACK INTERFACE
@@ -404,6 +483,10 @@ Please analyze the file content and answer the user's question based on what you
         )
         
         logger.info("Correction recorded and learned")
+    
+    def handle_correction(self, wrong_response: str, correct_response: str):
+        """Alias for correct() - used by dashboard."""
+        self.correct("", wrong_response, correct_response)
     
     # ========================================================================
     # KNOWLEDGE INTERFACE
